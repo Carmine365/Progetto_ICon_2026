@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+         xmlns:owl="http://www.w3.org/2002/07/owl#"
+         xml:base="http://test.org/water_quality.owl"
+         xmlns="http://test.org/water_quality.owl#">
+
+<owl:Ontology rdf:about="http://test.org/water_quality.owl"/>
+
+<owl:DatatypeProperty rdf:about="#descrizione_parametro">
+  <rdfs:domain rdf:resource="#Parameter"/>
+  <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+</owl:DatatypeProperty>
+
+<owl:Class rdf:about="#WaterSample">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:Class rdf:about="#Parameter">
+  <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+</owl:Class>
+
+<owl:NamedIndividual rdf:about="#ph">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Indica quanto l'acqua è acida o basica. Range sicuro WHO: 6.5 - 8.5.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Hardness">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Causata da sali di calcio e magnesio. Influenza la capacità di sciogliere sapone.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Solids">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Totale solidi disciolti (minerali, sali, metalli). Limite desiderabile: 500 mg/l.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Chloramines">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Disinfettanti usati nei sistemi idrici pubblici. Livelli sicuri fino a 4 mg/L.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Sulfate">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sostanza naturale trovata in minerali. Alte concentrazioni possono alterare il gusto.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Conductivity">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Misura la capacità dell'acqua di condurre corrente elettrica, legata ai minerali disciolti.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Organic_carbon">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Misura della quantità totale di carbonio nei composti organici.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Trihalomethanes">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Sottoprodotti chimici della clorazione. Livelli sicuri fino a 80 ppm.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#Turbidity">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Misura della nuvolosità dell'acqua dovuta a particelle sospese. WHO raccomanda &lt; 5.00 NTU.</descrizione_parametro>
+</owl:NamedIndividual>
+
+<owl:NamedIndividual rdf:about="#PotabilityStatus">
+  <rdf:type rdf:resource="#Parameter"/>
+  <descrizione_parametro rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Indica se l'acqua è sicura per il consumo umano (1) o no (0).</descrizione_parametro>
+</owl:NamedIndividual>
+
+
+</rdf:RDF>
