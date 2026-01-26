@@ -28,6 +28,7 @@
 
 
 ## 3. Modelli di Classificazione e Valutazione
+Usi algoritmi di classificazione (RandomForest, KNN). Hai un dataset etichettato (Label = Potability 0/1). Stai facendo induzione dai dati.
 
 *Qui inserisci i grafici generati da `main_models.py`.*
 
@@ -57,7 +58,7 @@
 
 
 ## 4. Knowledge Base e Ontologia
-
+Usi OWL e Logiche Descrittive (DL). Il file .owl è il tuo T-Box (terminologia). Quando carichi i dati, popoli l'A-Box (asserzioni).
 * **L'Ontologia (`water_quality.owl`):**
 * Spiega di aver modellato il dominio usando **Protégé**.
 * **Struttura:**
@@ -88,7 +89,7 @@
 * **Interazione:** Descrivi il menu interattivo dove l'utente inserisce i dati e riceve il responso colorato.
 
 ## 6. Constraint Satisfaction Problem (CSP)
-
+Hai un CSP (Constraint Satisfaction Problem). Spiega che le Variabili sono i turni, i Domini sono i laboratori/orari, e i Vincoli sono definiti in python-constraint. Il solver cerca una soluzione ammissibile.
 * **Il Problema:** Gestione dei turni dei laboratori di analisi.
 * **Variabili:** I giorni della settimana e le fasce orarie.
 * **Vincoli (Constraints):**
@@ -111,3 +112,30 @@
 2. **Screenshot Nuovi:** Non usare le vecchie immagini del diabete. Esegui il tuo `main_models.py`, fai gli screenshot dei grafici blu/arancioni che escono e incollali al posto di quelli vecchi.
 
 3. **Formattazione:** Usa grassetti per le parole chiave (**Accuracy**, **Knowledge Base**, **WHO**). Il professore scorre velocemente, le parole chiave devono saltare all'occhio.
+
+## Possibili implementazioni
+Possibili implementazioni derivate dalla teoria secondo Gemini:
+
+* Capitolo del Programma,
+* "Il ""Gap"" Attuale",
+* La Soluzione Rapida (Code Snippet)
+---
+4. 
+    * Rappr. e Ragionamento Proposizionale,
+    * "experta usa la logica, ma le regole sono spesso semplici IF-THEN.",
+    * Assicurati di avere almeno una regola che usi OR (disgiunzione) o NOT (negazione) in src/expert_system.py.
+    ---
+5. 
+    * Rappr. e Ragionamento Relazionale,
+    * "Le regole lavorano su fatti, ma spesso non sfruttano relazioni complesse.",
+    * "In expert_system.py, crea una regola che confronti due fatti diversi (es. Fact(param='pH') E Fact(param='Solfati'))."
+    ---
+8. 
+    * Reti Neurali,
+    * "Hai usato LogReg e KNN, ma non una Rete Neurale.",
+    * Aggiungi un MLPClassifier (Multi-Layer Perceptron) di sklearn in ml_models.py. È una rete neurale feed-forward classica.
+    ---
+9. 
+    * Ragionamento su Modelli Incerti,
+    * "Il ML dà probabilità, ma non stai usando Reti Bayesiane pure.",
+    * Usa Naive Bayes (GaussianNB) come uno dei modelli ML. È il ponte perfetto tra probabilità e ML.
