@@ -822,6 +822,8 @@ L’ontologia rappresenta quindi un **supporto semantico reale**, non un’aggiu
 Questa sezione descrive il **modulo di pianificazione** del progetto, implementato come **Constraint Satisfaction Problem (CSP)**.  
 Il riferimento principale è il file `src/scheduler.py`, che viene invocato dal KBS (`src/expert_system.py`) quando il sistema inferisce la necessità di un intervento operativo.
 
+L'obiettivo del modulo non è la diagnosi (compito del KBS), ma l'**allocazione delle risorse**: dato un problema rilevato (es. chimico), trovare una combinazione valida di **Personale**, **Giorno** e **Turno** che soddisfi i vincoli lavorativi e di competenza.
+
 L’obiettivo di questo modulo è dimostrare la capacità di:
 - modellare un problema decisionale come CSP;
 - separare la **diagnosi** (KBS) dalla **pianificazione** (scheduler);
@@ -847,9 +849,64 @@ Questa distinzione è fondamentale per:
 
 ---
 
-## 5.2 File e integrazione con il KBS
+## 5.2 Definizione Formale del Problema <X, D, C>
 
-### 5.2.1 File di riferimento
+Il CSP è definito dalla tripla $\langle X, D, C \rangle$, dove:
+- $X$: Insieme delle variabili.
+- $D$: Insieme dei domini delle variabili.
+- $C$: Insieme dei vincoli che limitano le combinazioni accettabili.
+
+### 5.2.1 Variabili (X)
+
+Nel file `src/scheduler.py` sono state definite tre variabili decisionali per ogni singola assegnazione:
+1. $X_{staff}$: Il membro del personale assegnato all'intervento.
+2. $X_{giorno}$: Il giorno della settimana previsto.
+3. $X_{turno}$: La fascia oraria lavorativa.
+
+### 5.2.2 Domini ($D$)
+
+I domini rappresentano i valori possibili assumibili dalle variabili.
+
+- **Dominio Temporale (Statico)**:
+  - $D_{giorno} = \{ \text{"Lunedi", "Martedi", "Mercoledi", "Giovedi", "Venerdi"} \}$
+  - $D_{turno} = \{ \text{"Mattina (08-14)", "Pomeriggio (14-20)"} \}$
+- **Dominio del Personale (Dinamico)**: Una caratteristica chiave dell'implementazione è che il dominio $D_{staff}$ non è fisso, ma viene **filtrato a priori** in base al tipo di problema diagnosticato dal KBS (`issue_type`). Questo riduce lo spazio di ricerca alla radice.
+  - Se `issue_type == "chemical"` (es. pH, Solfati):
+  $$D_{staff} = \{ \text{"Dr. Rossi (Senior)", "Dr. Verdi (Junior)"} \}$$
+  - Se issue_type == "physical" (es. Torbidità, Tubi):
+  $$D_{staff} = \{ \text{"Ing. Bianchi", "Tecnico Neri"} \}$$
+  - Se issue_type == "critical" (Allarme Rischio):
+  $$D_{staff} = \{ \text{"SQUADRA EMERGENZA", "Resp. Sicurezza"} \}$$
+
+### 5.2.3 Vincoli ($C$)
+
+I vincoli implementati (metodo `apply_constraints`) riflettono regole operative e di disponibilità.
+
+1. **Vincolo Unario/Binario su Disponibilità (Dr. Rossi)**:
+  - Descrizione: Il Dr. Rossi non lavora mai di Lunedì.
+  - Formalizzazione:
+  $$\forall s \in D_{staff}, \forall g \in D_{giorno}: (s = \text{"Dr. Rossi"} \land g = \text{"Lunedi"}) \implies False$$
+  - Implementazione: Funzione `vincolo_rossi_no_lunedi`.
+2. **Vincolo di Competenza/Supervisione (Dr. Verdi)**:
+  - Descrizione: Il Dr. Verdi (Junior) non può coprire i turni pomeridiani (presumibilmente perché richiedono supervisione assente il pomeriggio).
+  - Formalizzazione:$$\forall s \in D_{staff}, \forall t \in D_{turno}: (s = \text{"Dr. Verdi"} \land t = \text{"Pomeriggio"}) \implies False$$
+  - Implementazione: Funzione `vincolo_verdi_solo_mattina`.
+3. **Vincoli Impliciti (Hard Constraints)**: La struttura stessa dei domini impone vincoli rigidi: un "Tecnico Idraulico" non apparirà mai nel dominio di un problema chimico, impedendo *by design* assegnazioni incoerenti.
+
+---
+
+## 5.3 File e integrazione con il KBS
+
+L'interazione tra i due sistemi avviene nel metodo `_run_scheduler(issue_type)` in `src/expert_system.py`.
+
+1. **Inferenza**: Il KBS rileva, ad esempio, `problema_ph="acido"`.
+2. **Mapping**: Una regola attiva la chiamata `_run_scheduler("chemical")`.
+3. **Istanziazione CSP**: Viene creato un oggetto `laboratory_csp` iniettando il contesto (`"chemical"`).
+4. **Propagazione**: Il costruttore del CSP restringe il dominio $D_{staff}$ ai soli chimici.
+5. **Risoluzione**: Il solver (libreria `python-constraint`) esplora lo spazio degli stati ridotto e applica i vincoli su Rossi e Verdi.
+6. **Output**: Restituisce la prima soluzione valida (o tutte le soluzioni) al KBS, che la propone all'utente.
+
+### 5.3.1 File di riferimento
 - **Modulo CSP**: `src/scheduler.py`
 - **Invocazione**: `src/expert_system.py` tramite il metodo `_run_scheduler(issue_type)`
 
@@ -865,7 +922,7 @@ Questa scelta:
 
 ---
 
-## 5.3 Modellazione del CSP
+## 5.4 Modellazione del CSP
 
 Il problema di scheduling è modellato come un CSP classico, definendo:
 
@@ -877,7 +934,7 @@ L’obiettivo non è la complessità industriale del problema, ma la **corretta 
 
 ---
 
-### 5.3.1 Variabili del CSP
+### 5.4.1 Variabili del CSP
 
 Nel modulo `scheduler.py`, le variabili rappresentano le decisioni da prendere, tipicamente:
 
@@ -894,7 +951,7 @@ Il valore della variabile rappresenta la risorsa scelta per l’intervento.
 
 ---
 
-### 5.3.2 Domini delle variabili
+### 5.4.2 Domini delle variabili
 
 Il dominio di ciascuna variabile è costituito da un insieme finito di valori possibili, ad esempio:
 
@@ -913,7 +970,7 @@ Questa riduzione del dominio è una forma di **propagazione dei vincoli a monte*
 
 ---
 
-### 5.3.3 Vincoli del CSP
+### 5.4.3 Vincoli del CSP
 
 I vincoli modellano le restrizioni operative del problema.
 Nel progetto, i vincoli includono concettualmente:
@@ -932,7 +989,7 @@ Anche se il problema è volutamente semplice, la struttura è coerente con un CS
 
 ---
 
-## 5.4 Risoluzione del CSP
+## 5.5 Risoluzione del CSP
 
 Il modulo `scheduler.py`:
 
@@ -949,9 +1006,9 @@ Non viene forzata una strategia di ottimizzazione complessa (es. minimizzazione 
 
 ---
 
-## 5.5 Integrazione diagnosi → pianificazione
+## 5.6 Integrazione diagnosi → pianificazione
 
-### 5.5.1 Flusso completo
+### 5.6.1 Flusso completo
 
 Il flusso integrato KBS–CSP è il seguente:
 
@@ -966,9 +1023,9 @@ Questo flusso dimostra una **catena causale completa**:
 
 ---
 
-## 5.6 Scelte progettuali e alternative scartate
+## 5.7 Scelte progettuali e alternative scartate
 
-### 5.6.1 Perché un CSP e non codice procedurale
+### 5.7.1 Perché un CSP e non codice procedurale
 
 Una soluzione procedurale (if/else) sarebbe stata:
 
@@ -984,7 +1041,7 @@ Il CSP consente invece di:
 
 ---
 
-### 5.6.2 Perché un CSP semplice
+### 5.7.2 Perché un CSP semplice
 
 Il problema è volutamente contenuto perché:
 
@@ -994,28 +1051,32 @@ Il problema è volutamente contenuto perché:
 
 ---
 
-## 5.7 Complessità computazionale
+## 5.8 Complessità computazionale e Spazio degli Stati
 
 * Numero di variabili: basso (1–poche variabili).
 * Dimensione dei domini: limitata e dipendente dal tipo di problema.
 * Numero di vincoli: contenuto.
 
-La complessità è quindi bassa e compatibile con l’uso interattivo del sistema.
-Questo è coerente con l’obiettivo di **supporto decisionale**, non di pianificazione industriale su larga scala.
+La dimensione dello spazio degli stati ($\mathcal{S}$) è data dal prodotto cartesiano dei domini:
+$$|\mathcal{S}| = |D_{staff}| \times |D_{giorno}| \times |D_{turno}|$$
+
+Nel caso peggiore (senza filtri):
+$$|\mathcal{S}| \approx 6 \text{ (staff)} \times 5 \text{ (giorni)} \times 2 \text{ (turni)} = 60 \text{ stati possibili}$$
+
+Grazie al **pre-filtering** dinamico del dominio staff (che riduce lo staff a 2 persone per tipologia), lo spazio si riduce drasticamente:
+$$|\mathcal{S}'| = 2 \times 5 \times 2 = 20 \text{ stati possibili}$$
+
+Questa riduzione rende la risoluzione istantanea, garantendo che il sistema rimanga reattivo durante l'interazione con l'utente, pur mantenendo la flessibilità di aggiungere nuovi vincoli complessi in futuro senza riscrivere la logica di controllo.
 
 ---
 
-## 5.8 Limiti e possibili estensioni del CSP
+## 5.9 Libreria utilizzata
 
-### 5.8.1 Limiti attuali
-
-* Numero ridotto di risorse e vincoli.
-* Assenza di una funzione di costo o ottimizzazione.
-* Pianificazione su un singolo intervento alla volta.
+L'implementazione si basa su `python-constraint`, un motore di risoluzione efficiente che utilizza algoritmi di **Backtracking** standard. La scelta di questa libreria permette di definire i vincoli in modo dichiarativo (funzioni Python che restituiscono `True`/`False`), separando nettamente la definizione del problema dalla sua risoluzione algoritmica.
 
 ---
 
-### 5.8.2 Estensioni possibili
+### 5.10 Estensioni possibili
 
 Il modulo CSP può essere esteso per:
 
@@ -1028,7 +1089,7 @@ Queste estensioni sarebbero naturali in un’evoluzione del progetto verso un la
 
 ---
 
-## 5.9 Considerazioni finali sul modulo CSP
+## 5.11 Considerazioni finali sul modulo CSP
 
 Il modulo CSP:
 
