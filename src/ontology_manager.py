@@ -32,38 +32,34 @@ class water_ontology:
 
     def get_parameters_descriptions(self):
         """
-        Recupera le descrizioni dei parametri salvate nelle proprietà dell'ontologia.
-        Utile per spiegare all'utente cosa significa 'Torbidità' o 'pH'.
+        Recupera le descrizioni pulite usando direttamente l'attributo .name
         """
         if not self.ontology:
             return
 
-        dict_params_onto = {}
+        # Svuotiamo il dizionario per sicurezza
+        self.dict_parameters = {}
 
-        # Itera su tutti gli individui (es. pH, Hardness, Solids...)
+        # Itera su tutti gli individui (es. pH, Hardness...)
         for i in self.ontology.individuals():
-            # NOTA: Nell'ontologia devi aver creato la proprietà "descrizione_parametro"
-            # Se l'individuo ha una descrizione, la salviamo
-            if hasattr(i, "descrizione_parametro"):
-                # Gestione sicura per evitare errori se la lista è vuota
-                desc = i.descrizione_parametro
-                dict_params_onto[str(i)] = desc if desc else ["Descrizione non disponibile"]
-            else:
-                # Fallback se manca la proprietà
-                dict_params_onto[str(i)] = ["Descrizione non disponibile"]
-
-        for k in dict_params_onto.keys():
-            k1 = k
-            # PULIZIA NOME: Rimuove il prefisso dell'ontologia per avere solo il nome pulito
-            # Es: "water_quality.istanza_pH" diventa "pH"
-            k1 = k1.replace("water_quality.istanza_", "")
-            k1 = k1.replace("water_quality.", "") # Sicurezza extra
+            # 1. Recupero Nome Pulito (La modifica chiave)
+            # Invece di str(i) che dà "ontology.ph", i.name dà solo "ph" o "Hardness"
+            clean_name = i.name 
             
-            self.dict_parameters[k1] = dict_params_onto[k]
+            # 2. Recupero Descrizione
+            if hasattr(i, "descrizione_parametro") and i.descrizione_parametro:
+                # owlready2 restituisce spesso una lista per le proprietà testo
+                desc_raw = i.descrizione_parametro
+                desc_text = desc_raw[0] if isinstance(desc_raw, list) else str(desc_raw)
+            else:
+                desc_text = "Descrizione non disponibile nell'ontologia."
+
+            # 3. Salvataggio nel dizionario
+            self.dict_parameters[clean_name] = desc_text
 
     def print_parameters(self):
         """
-        Stampa a video la lista dei parametri disponibili e le loro descrizioni.
+        Stampa solo l'elenco dei nomi per il menu di scelta.
         """
         i = 1
         dict_nums_params = {}
@@ -73,13 +69,11 @@ class water_ontology:
             print("Nessun parametro caricato dall'ontologia.")
             return {}, {}
 
+        print("\n--- PARAMETRI DISPONIBILI ---")
         for k in self.dict_parameters.keys():
-            # Prende la prima stringa della descrizione (owlready restituisce liste)
-            desc_text = self.dict_parameters[k][0] if isinstance(self.dict_parameters[k], list) else self.dict_parameters[k]
-            
-            print(f"Parametro [{i}]: {k}")
-            print(f"   Descrizione: {desc_text}")
-            print("-" * 30)
+            # MODIFICA: Stampiamo solo [Numero] Nome
+            # La descrizione la mostriamo solo quando l'utente sceglie!
+            print(f"[{i}] {k}")
             
             dict_nums_params[i] = self.dict_parameters[k]
             dict_nums_keys[i] = k

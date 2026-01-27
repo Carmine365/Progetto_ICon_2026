@@ -11,7 +11,7 @@ if not hasattr(collections, 'Iterable'):
 # ----------------------------
 
 from experta import *
-from colorama import Fore
+from colorama import Fore, Style, init
 from .data_loader import water_data
 from .scheduler import laboratory_csp
 from .ontology_manager import water_ontology
@@ -112,6 +112,19 @@ class WaterExpert(KnowledgeEngine):
 
         self.declare(Fact(fase_analisi_strumentale="si"))
 
+    # --- NUOVA REGOLA RELAZIONALE ---
+    @Rule(
+        Fact(action="analyze"),
+        Fact(param='ph', value=P(lambda x: x < 6.0)),      # pH Acido
+        Fact(param='sulfate', value=P(lambda x: x > 200))  # Solfati Alti
+    )
+    def corrosion_risk_alert(self):
+        print(Fore.RED + "\n!!! ALLARME RELAZIONALE ATTIVATO !!!")
+        print("   >> Combinazione Critica: pH Acido + Solfati Alti")
+        print("   >> Rischio immediato corrosione tubature." + Fore.RESET)
+        
+        self.declare(Fact(problem_type="critical"))
+
     # 2. FASE ANALISI STRUMENTALE (Ex Esami Sangue)
     @Rule(Fact(fase_analisi_strumentale="si"))
     def ask_ph(self):
@@ -124,6 +137,12 @@ class WaterExpert(KnowledgeEngine):
                 print("Valore non valido. Inserisci un numero tra 0 e 14:")
                 ph_val = float(input())
             
+            # --- MODIFICA FONDAMENTALE ---
+            # Dichiariamo il fatto numerico che serve alla regola "Corrosion Risk"
+            # Senza questa riga, la regola relazionale non saprà mai quanto vale il pH!
+            self.declare(Fact(param='ph', value=ph_val)) 
+            # -----------------------------
+
             if ph_val < PH_MIN:
                 print(Fore.RED + f"ALLARME: pH ACIDO ({ph_val}). Corrosivo per le tubature.")
                 reset_color()
@@ -141,10 +160,35 @@ class WaterExpert(KnowledgeEngine):
         except ValueError:
             print("Valore non numerico inserito, salto questo test.")
 
-        self.declare(Fact(chiedi_torbidita="si"))
+        self.declare(Fact(step="ask_sulfates"))
+
+    # --- 2. DOMANDA SOLFATI (Quella che ti mancava) ---
+    @Rule(Fact(step="ask_sulfates"))
+    def ask_sulfates(self):
+        print(Fore.CYAN + "\n--- ANALISI SOLFATI ---" + Fore.RESET)
+        try:
+            # Chiede input
+            val = float(input("Inserisci concentrazione Solfati (mg/L): "))
+            
+            # 1. Dichiara il FATTO NUMERICO (Il secondo pezzo del puzzle!)
+            self.declare(Fact(param='sulfate', value=val))
+            
+            # 2. Feedback immediato
+            if val > 250:
+                print(Fore.YELLOW + f" >> ATTENZIONE: Solfati alti ({val} mg/L)." + Fore.RESET)
+                self.declare(Fact(problema_solfati="alto"))
+            else:
+                print(Fore.GREEN + " >> Solfati nella norma." + Fore.RESET)
+            
+            # 3. Passa allo step successivo (es. Torbidità o Fine)
+            self.declare(Fact(step="ask_turbidity")) 
+            
+        except ValueError:
+            print("Valore non valido.")
+            self.declare(Fact(step="ask_turbidity"))
 
     # 3. ANALISI TORBIDITÀ (Sostituisce Glicemia Casuale)
-    @Rule(Fact(chiedi_torbidita="si"))
+    @Rule(Fact(step="ask_turbidity"))
     def ask_turbidity(self):
         print(Fore.CYAN + "\n--- ANALISI FISICA (Torbidità) ---")
         reset_color()
@@ -200,25 +244,26 @@ class WaterExpert(KnowledgeEngine):
 
         self.declare(Fact(fine_analisi="si"))
 
-    # --- REGOLE DI PRENOTAZIONE LABORATORIO (CSP) ---
-    
-    # Se c'è un problema di pH -> Laboratorio Chimico
+    # --- REGOLE LABORATORI AGGIORNATE ---
+
     @Rule(OR(Fact(problema_ph="acido"), Fact(problema_ph="basico")))
     def book_chemical_lab(self):
-        self._prototype_lab_booking("il pH fuori norma", self.lab_chemical)
+        print(Fore.CYAN + "[CSP] Richiesta turno LABORATORIO CHIMICO..." + Fore.RESET)
+        # Passiamo "chemical" per trovare il Dr. Rossi o i chimici
+        self._run_scheduler("chemical")
 
-    # Se c'è un problema di Torbidità o Solidi -> Laboratorio Fisico
     @Rule(OR(Fact(problema_torbidita="alta"), Fact(problema_solidi="alto")))
     def book_physical_lab(self):
-        self._prototype_lab_booking("la torbidità o i solidi eccessivi", self.lab_physical)
+        print(Fore.CYAN + "[CSP] Richiesta turno MANUTENZIONE FISICA..." + Fore.RESET)
+        # Passiamo "physical" per trovare idraulici o tecnici
+        self._run_scheduler("physical")
         
-    # Se ci sono troppi problemi insieme -> Impianto Depurazione
     @Rule(AND(Fact(problema_ph=MATCH.p), Fact(problema_torbidita="alta")))
     def critical_contamination(self):
-        print(Fore.RED + "\n!!! CONTAMINAZIONE CRITICA RILEVATA !!!")
-        print("Parametri multipli fuori norma. L'acqua NON è potabile.")
-        reset_color()
-        self._prototype_lab_booking("la DEPURAZIONE COMPLETA", self.lab_treatment)
+        print(Fore.RED + "\n!!! CONTAMINAZIONE CRITICA RILEVATA !!!" + Fore.RESET)
+        print(Fore.MAGENTA + "[CSP] ⚠️ ATTIVAZIONE SQUADRA EMERGENZA..." + Fore.RESET)
+        # Passiamo "critical" per la squadra speciale
+        self._run_scheduler("critical")
 
     # --- CONCLUSIONI ---
 
@@ -230,3 +275,17 @@ class WaterExpert(KnowledgeEngine):
         else:
             print(Fore.RED + f"L'acqua NON è sicura. Rilevate {self.problems_found} anomalie.")
         reset_color()
+
+    def _run_scheduler(self, issue_type):
+        """Esegue il CSP cercando turni specifici per il tipo di problema"""
+        try:
+            # Chiama il tuo scheduler.py aggiornato
+            csp = laboratory_csp(issue_type=issue_type)
+            solutions = csp.get_solutions_list()
+            
+            if solutions:
+                print(f"   >> Turno Assegnato: {solutions[0]}")
+            else:
+                print(Fore.RED + "   >> NESSUN TURNO DISPONIBILE (Verificare vincoli!)" + Fore.RESET)
+        except Exception as e:
+            print(f"   >> Errore Scheduler: {e}")
