@@ -62,7 +62,20 @@ if __name__ == "__main__":
     for name, model_obj in models_to_run:
         print(f"\n[{name}] In esecuzione...")
         
-        # 1. Addestramento
+        # A. CROSS-VALIDATION (Per la Lode e le Linee Guida)
+        # Calcola media e deviazione standard su 10 fold
+        print(f"   [1] Esecuzione Cross-Validation (10-fold)...")
+        try:
+            # Nota: Assicurati di aver aggiunto il metodo evaluate_with_cross_validation in ml_models.py
+            # Se non l'hai fatto, il programma darà errore qui. Nel caso, commenta queste 2 righe.
+            mean_acc, std_acc = model_obj.evaluate_with_cross_validation()
+            print(f"       -> Accuracy Media: {mean_acc:.4f} (± {std_acc:.4f})")
+        except AttributeError:
+            print("       -> Metodo Cross-Validation non trovato (saltato).")
+
+        # B. ADDESTRAMENTO STANDARD (Per i Grafici)
+        # Serve per generare la matrice di confusione e la curva ROC su un singolo split
+        print(f"   [2] Generazione Grafici su Test Set (20%)...")
         model_obj.predict()
         
         # 2. Stampa Metriche Testuali

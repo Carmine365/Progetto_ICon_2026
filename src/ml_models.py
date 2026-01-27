@@ -5,11 +5,12 @@ from sklearn.naive_bayes import GaussianNB        # Cap. 9-10
 from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
                              confusion_matrix, f1_score, precision_score,
                              recall_score, roc_curve, auc)
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn import tree
 import matplotlib.pyplot as plt
 from typing import Final, Optional
+import numpy as np
 
 # Assicurati che l'import sia relativo se sei dentro il package src
 from .data_loader import water_data 
@@ -92,6 +93,23 @@ class water_model:
         if test_size > 0 and test_size < 1:
             return True
         return False
+
+    def evaluate_with_cross_validation(self, folds=10):
+        """
+        Esegue la Cross-Validation per soddisfare i requisiti delle Linee Guida.
+        Calcola Media e Deviazione Standard invece di un singolo run.
+        """
+        # Eseguiamo 10 run diversi su porzioni diverse del dataset
+        scores = cross_val_score(self.model, self.x, self.y.ravel(), cv=folds, scoring='accuracy')
+        
+        mean_acc = scores.mean()
+        std_acc = scores.std()
+        
+        self.scores["CV_Mean_Accuracy"] = mean_acc
+        self.scores["CV_Std_Dev"] = std_acc
+        
+        print(f"   [Cross-Validation {folds}-fold] Accuracy Media: {mean_acc:.4f} (+/- {std_acc:.4f})")
+        return mean_acc, std_acc
 
 
 class water_log_reg(water_model):
