@@ -136,8 +136,8 @@ Progetto realizzato per l'esame di Ingegneria della Conoscenza.
 
 
 * **Claudio Gualberti**
-* Matricola: [INSERIRE MATRICOLA]
-* Email: claudione89@studenti.uniba.it
+* Matricola: 801963
+* Email: c.gualberti@studenti.uniba.it
 
 
 
