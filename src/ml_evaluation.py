@@ -206,20 +206,35 @@ def comparison_metrics_models(data: water_data, test_size: float):
 
     # Strutture dati per il plot
     metric_names = ['Accuracy', 'Precision', 'Recall', 'F1']
+
     # Dizionario che conterrà liste di valori per ogni metrica: {'Accuracy': [val_mod1, val_mod2...], ...}
     means_by_metric = {m: [] for m in metric_names}
     stds_by_metric = {m: [] for m in metric_names}
     model_names = []
 
-    # 2. Calcolo Metriche
+    # --- INIZIO HEADER TABELLA ---
+    print("\n" + "="*85)
+    print(f"{'MODELLO':<25} | {'ACCURACY (Mean ± Std)':<22} | {'PRECISION':<10} | {'RECALL':<10} | {'F1':<10}")
+    print("-" * 85)
+    # -----------------------------
+
+    # 2. Calcolo Metriche e Stampa
     for name, model in models.items():
-        print(f"Valutazione {name}...")
+        # Calcoliamo le metriche
         means, stds = model.evaluate_with_cross_validation(folds=10)
         
+        # Salviamo per il grafico
         model_names.append(name)
         for m in metric_names:
             means_by_metric[m].append(means[m])
             stds_by_metric[m].append(stds[m])
+
+        # --- STAMPA RIGA TABELLA ---
+        # Formattiamo i numeri: .3f significa "3 cifre decimali"
+        print(f"{name:<25} | {means['Accuracy']:.3f} ± {stds['Accuracy']:.3f}        | "
+              f"{means['Precision']:.3f}      | {means['Recall']:.3f}      | {means['F1']:.3f}")
+    
+    print("="*85 + "\n")
 
     # 3. Creazione Grafico Raggruppato
     x = np.arange(len(model_names))  # Posizioni sull'asse X

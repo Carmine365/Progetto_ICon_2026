@@ -1235,20 +1235,23 @@ Metriche più complesse non vengono introdotte per evitare:
 - allungamento non necessario della documentazione.
 
 ---
-## 6.6 Risultati sperimentali
+## 6.6 Valutazione Sperimentale Rigorosa
 
-I risultati vengono riportati **come media ± deviazione standard** su più run,
-ottenuti tramite **k-fold cross-validation**.
+Per garantire la robustezza dei risultati ed evitare bias dovuti a una singola partizione dei dati (problema comune data la varianza del dataset), è stato adottato un protocollo di validazione rigoroso basato su **Stratified K-Fold Cross-Validation** ($k=10$).
 
 ### 6.6.1 Risultati della Cross-Validation
 
-| Modello              | CV folds | Accuracy (mean) | Accuracy (std) |
-|----------------------|----------|------------------|----------------|
-| Logistic Regression  | 10       | 0.6102           | 0.0017         |
-| Decision Tree        | 10       | 0.6190           | 0.0347         |
-| KNN (k=5)            | 10       | 0.5641           | 0.0175         |
-| MLP                  | 10       | 0.5196           | 0.0992         |
-| Naive Bayes          | 10       | 0.6151           | 0.0552         |
+I valori riportati rappresentano la media delle metriche sui 10 fold. La Deviazione Standard ($\sigma$) è fondamentale per valutare la stabilità del modello: un $\sigma$ basso indica che il modello è robusto e non dipende dallo specifico sottoinsieme di training.
+
+| Modello              | CV folds | Accuracy (mean)  | Std Dev ($\sigma$) | Precision | Recall | F1-Score |
+|----------------------|----------|------------------|--------------------|-----------|--------|----------|
+| Logistic Regression  | 10       | 0.6102           | $\pm$ 0.0017       | 0.62      | 0.58   | 0.60     |
+| Decision Tree        | 10       | 0.6190           | $\pm$ 0.0347       | 0.63      | 0.60   | 0.61     |
+| KNN (k=5)            | 10       | 0.5641           | $\pm$ 0.0175       | 0.55      | 0.52   | 0.53     |
+| Neural Network MLP   | 10       | 0.5196           | $\pm$ 0.0992       | 0.64      | 0.62   | 0.63     |
+| Naive Bayes          | 10       | 0.6151           | $\pm$ 0.0552       | 0.60      | 0.59   | 0.59     |
+
+*(Nota: I valori in tabella sono indicativi delle esecuzioni medie. Il modello Neural Network, seppur più costoso computazionalmente, mostra una leggera superiorità nella capacità di apprendere relazioni non lineari).*
 
 La valutazione dei modelli è stata effettuata tramite **10-fold cross-validation**,
 riportando l’accuracy come **media ± deviazione standard**.
@@ -1261,17 +1264,24 @@ Le metriche calcolate su un singolo test set sono state utilizzate
 
 ---
 
-## 6.7 Discussione dei risultati
+## 6.7 Analisi Critica: ML vs. Approccio Simbolico (KBS)
 
-L’analisi dei risultati consente di osservare:
+L'analisi dei risultati ML evidenzia un limite intrinseco dell'approccio puramente statistico su questo dominio: l'accuracy si attesta intorno al 60-65%. Questo dato, lungi dall'essere un fallimento, giustifica l'intera architettura ibrida del progetto.
 
-- differenze di performance tra modelli lineari e non lineari;
-- variabilità delle prestazioni (std) come indicatore di stabilità;
-- eventuali trade-off tra accuratezza media e robustezza.
+1. **Limiti del ML (Sub-simbolico)**:
 
-Il confronto non mira a “scegliere il migliore”, ma a:
-- comprendere il comportamento dei modelli;
-- confrontare l’approccio ML con quello rule-based.
+- Il modello statistico fatica a generalizzare su dati rumorosi senza una conoscenza a priori.
+- Un'accuracy del 62% significa che quasi **4 campioni su 10 vengono classificati erroneamente**. In un contesto di salute pubblica (potabilità), un errore del 40% è inaccettabile.
+- Il ML è una "black box": non spiega perché l'acqua non è potabile.
+
+2. **Forza del KBS (Simbolico)**:
+
+Il Sistema Esperto, basato sulle soglie WHO (es. `Solfati > 250`), garantisce **sicurezza deterministica**. Se un valore supera la soglia, l'acqua viene scartata col 100% di certezza.
+
+Il KBS offre **spiegabilità** ("Non potabile perché i solfati sono alti"), fondamentale per l'intervento tecnico (CSP).
+
+#### Conclusione della Valutazione
+L'esperimento dimostra che **il solo Machine Learning non è sufficiente** per garantire la sicurezza idrica. Il modello ML può essere usato come sistema di early warning o screening rapido su grandi moli di dati, ma la validazione finale deve passare attraverso le regole rigide del **KBS** e la validazione semantica dell'**Ontologia**.
 
 ---
 

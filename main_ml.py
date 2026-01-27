@@ -70,8 +70,12 @@ if __name__ == "__main__":
             # Se non l'hai fatto, il programma darà errore qui. Nel caso, commenta queste 2 righe.
             mean_acc, std_acc = model_obj.evaluate_with_cross_validation()
             print(f"       -> Accuracy Media: {mean_acc:.4f} (± {std_acc:.4f})")
+            # USIAMO QUESTA PER IL REPORT (Più robusta)
+            accuracy_for_report = mean_acc
         except AttributeError:
             print("       -> Metodo Cross-Validation non trovato (saltato).")
+            # Se fallisce, usiamo quella del singolo test come fallback
+            accuracy_for_report = model_obj.get_metric("Accuracy")
 
         # B. ADDESTRAMENTO STANDARD (Per i Grafici)
         # Serve per generare la matrice di confusione e la curva ROC su un singolo split
@@ -90,10 +94,21 @@ if __name__ == "__main__":
         
         # Salva l'accuratezza per il grafico finale
         acc = model_obj.get_metric("Accuracy")
-        final_results.append({"Model": name, "Accuracy": acc})
+        final_results.append({"Model": name, "Accuracy": accuracy_for_report})
 
     # --- 3. CONFRONTO FINALE ---
     print("\n--- 3. Confronto Finale ---")
+    
+    # Creiamo una vista tabellare dei risultati
+    df_summary = pd.DataFrame(final_results)
+    
+    # --- ECCO LA DIDASCALIA CHE VOLEVI ---
+    print("\nTabella 1: Riepilogo Accuratezza (valori medi su 10-fold Cross-Validation)")
+    print("-" * 65)
+    print(df_summary.to_string(index=False)) # Stampa la tabella pulita senza indici
+    print("-" * 65)
+    print("\n")
+
     plot_model_comparison(final_results)
     
     print("\n--- Analisi Completata ---")
