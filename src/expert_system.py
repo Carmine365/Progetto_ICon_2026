@@ -100,7 +100,7 @@ class WaterExpert(KnowledgeEngine):
         reset_color()
         self.declare(Fact(chiedi_osservazioni="si"))
 
-    # 1. FASE OSSERVAZIONALE (Ex Sintomi)
+    # 1. FASE OSSERVAZIONALE
     @Rule(Fact(chiedi_osservazioni="si"))
     def ask_observations(self):
         print("Rispondi alle domande sull'aspetto del campione d'acqua:\n")
@@ -110,6 +110,10 @@ class WaterExpert(KnowledgeEngine):
         self._prototype_ask_observation("L'acqua ha un sapore metallico o amaro? [si/no]", Fact(sapore_strano="si"))
         self._prototype_ask_observation("Hai notato residui o sedimenti sul fondo? [si/no]", Fact(sedimenti="si"))
 
+        # 1. Attiviamo il flag che abilita le regole relazionali complesse
+        self.declare(Fact(action="analyze"))  
+        
+        # 2. Passiamo alla fase successiva
         self.declare(Fact(fase_analisi_strumentale="si"))
 
     # --- NUOVA REGOLA RELAZIONALE ---

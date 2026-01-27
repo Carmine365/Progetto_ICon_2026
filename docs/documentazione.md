@@ -549,8 +549,7 @@ Una delle regole più avanzate combina più parametri per identificare rischi co
 * **Condizione**: pH < 6.0 **AND** Solfati > 200 **AND** `Fact(action="analyze")`.
 * **Conclusione**: `Fact(problem_type="critical")`.
 
-> [!IMPORTANT]
-> **Analisi Critica:** Nel codice attuale, il fatto `Fact(action="analyze")` non viene dichiarato esplicitamente. Ciò rappresenta un limite nel motore inferenziale che impedirebbe l'attivazione della regola, risolvibile con una semplice asserzione al termine dell'acquisizione dati.
+Il sistema utilizza un fatto di controllo globale `Fact(action="analyze")`, asserito al termine della fase osservazionale. Questo fatto funge da gatekeeper (interruttore logico) per abilitare le regole relazionali critiche solo quando l'utente ha completato l'anamnesi preliminare, prevenendo falsi positivi durante l'inizializzazione.
 
 ---
 
