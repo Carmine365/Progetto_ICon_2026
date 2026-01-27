@@ -26,7 +26,7 @@ def metrics_graph_lr(data: water_data, test_size: float):
     i = 0
     while i < len(iterations_vect):
         # CAMBIO NOME CLASSE
-        model_i = water_logistic_regression(
+        model_i = water_log_reg(
             data, int(iterations_vect[i]), test_size)
 
         model_i.predict()
@@ -68,7 +68,7 @@ def metrics_graph_dt(data: water_data, test_size: float):
     i = 0
     while i < len(iterations_vect):
         # CAMBIO NOME CLASSE
-        model_i = water_decision_tree(data, iterations_vect[i], test_size)
+        model_i = water_dec_tree(data, iterations_vect[i], test_size)
 
         model_i.predict()
         accuracy_vect.append(model_i.get_metric("Accuracy"))
@@ -130,7 +130,7 @@ def metrics_graph_knn(data: water_data, test_size: float):
     graph_lr[1, 1].set_title("F1_Precision - KNN")
     plt.show()
 
-
+"""
 def comparison_metrics_models(data: water_data, test_size: float):
 
     # CAMBIO NOMI CLASSI
@@ -189,4 +189,60 @@ def comparison_metrics_models(data: water_data, test_size: float):
     graph_lr[1, 1].bar(models_names, models_accuracy_data, color="blue")
     graph_lr[1, 1].set_title("Accuracy")
 
+    plt.show()
+"""
+def comparison_metrics_models(data: water_data, test_size: float):
+    print("\n--- AVVIO VALUTAZIONE COMPARATIVA (Cross-Validation) ---")
+    
+    # 1. Istanziamo i modelli (usando i nomi corretti presenti nel tuo ml_models.py)
+    # Nota: per la CV il test_size nel costruttore è meno rilevante, ma lo passiamo per compatibilità
+    models = {
+        "Logistic Regression": water_log_reg(data, test_size),
+        "Decision Tree": water_dec_tree(data, test_size),
+        "KNN": water_knn(data, test_size, neighbors=9),
+        "Neural Network": water_neural_network(data, test_size), # Bonus Cap. 8
+        "Naive Bayes": water_naive_bayes(data, test_size)        # Bonus Cap. 9
+    }
+
+    # Strutture dati per il plot
+    metric_names = ['Accuracy', 'Precision', 'Recall', 'F1']
+    # Dizionario che conterrà liste di valori per ogni metrica: {'Accuracy': [val_mod1, val_mod2...], ...}
+    means_by_metric = {m: [] for m in metric_names}
+    stds_by_metric = {m: [] for m in metric_names}
+    model_names = []
+
+    # 2. Calcolo Metriche
+    for name, model in models.items():
+        print(f"Valutazione {name}...")
+        means, stds = model.evaluate_with_cross_validation(folds=10)
+        
+        model_names.append(name)
+        for m in metric_names:
+            means_by_metric[m].append(means[m])
+            stds_by_metric[m].append(stds[m])
+
+    # 3. Creazione Grafico Raggruppato
+    x = np.arange(len(model_names))  # Posizioni sull'asse X
+    width = 0.2  # Larghezza delle barre
+    multiplier = 0
+
+    fig, ax = plt.subplots(figsize=(14, 7))
+
+    for attribute, measurement in means_by_metric.items():
+        offset = width * multiplier
+        # Disegna le barre per questa metrica (es. Accuracy) per tutti i modelli
+        rects = ax.bar(x + offset, measurement, width, yerr=stds_by_metric[attribute], 
+                       label=attribute, capsize=4)
+        multiplier += 1
+
+    # Personalizzazione Grafico
+    ax.set_ylabel('Punteggio (0-1)')
+    ax.set_title('Confronto Completo Modelli (Media CV ± Dev.Std)')
+    ax.set_xticks(x + width * 1.5) # Centra le etichette
+    ax.set_xticklabels(model_names)
+    ax.legend(loc='lower right', ncols=4)
+    ax.set_ylim(0, 1.1)
+    ax.grid(axis='y', linestyle='--', alpha=0.3)
+
+    plt.tight_layout()
     plt.show()
