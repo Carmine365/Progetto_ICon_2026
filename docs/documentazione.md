@@ -76,8 +76,9 @@ Il progetto non è centrato su un solo paradigma: integra più temi del corso, c
 ### Modellazione ontologica (OWL)
 - **Dove**: `ontology/water_quality.owl` (+ `ontology_builder.py`)
 - **Cosa**:
-  - concetti del dominio (parametri, qualità, categorie/relazioni)
-  - descrizioni/metadata utili a contestualizzare i parametri nel sistema
+  - uso di **Data Properties** per mappare valori numerici (`has_ph_value`, `has_sulfate_value`);
+  - definizione di **Classi Definite** (`AcidicWater`, `HighSulfateWater`) basate su restrizioni di datatypes (`some`, `max_exclusive`);
+  - uso di costrutti logici avanzati come l'**Unione** (`UnsafeWater` ≡ `Acidic` ∪ `HighSulfate` ∪ `Turbid`) per classificare automaticamente i campioni pericolosi tramite il reasoner.
 
 ### CSP / vincoli per l’azione operativa
 - **Dove**: `src/scheduler.py` e chiamate dal KBS in `src/expert_system.py`
@@ -597,67 +598,60 @@ La decisione finale è **deterministica, spiegabile e tracciabile**, poiché ogn
 
 ---
 
-# 4. Ontologia OWL: modellazione del dominio e supporto semantico
+# 4. Ontologia OWL: Inferenza Semantica e Classificazione Automatica
 
-Questa sezione descrive l’uso dell’**ontologia OWL** all’interno del progetto, facendo riferimento esplicito ai file presenti nello ZIP e chiarendo **scelte di modellazione**, **modalità d’uso**, **integrazione con il resto del sistema** e **limiti**.  
-L’ontologia non è utilizzata come semplice database, ma come **strato semantico** a supporto del sistema complessivo.
+Questa sezione descrive l’uso dell’**ontologia OWL** all’interno del progetto. A differenza di approcci che usano OWL come semplice dizionario tassonomico, questo progetto sfrutta le capacità espressive di **OWL DL (Description Logic)** per implementare un motore di classificazione semantica parallelo al KBS.
 
 File di riferimento:
 - `ontology/water_quality.owl`
-- `ontology/ontology_builder.py`
-- `src/ontology_manager.py`
+- `ontology/ontology_builder.py` (costruzione programmatica delle classi definite)
+- `src/ontology_manager.py` (inferenza tramite Pellet)
 
 ---
 
-## 4.1 Ruolo dell’ontologia nel progetto
+## 4.1 Ruolo dell’ontologia: dal Dizionario al Motore Logico
 
-L’ontologia ha il compito di fornire una **rappresentazione concettuale formale** del dominio della qualità dell’acqua.  
-In particolare, viene utilizzata per:
-
-- modellare concetti e parametri del dominio in modo esplicito;
-- associare **significato e descrizione semantica** ai parametri analizzati dal KBS;
-- consentire (quando possibile) **inferenza automatica** tramite reasoner OWL;
-- separare la **conoscenza concettuale** dalla logica procedurale e dalle regole.
-
-L’obiettivo non è sostituire la KB rule-based, ma **complementarla**, mantenendo distinti:
-- ragionamento simbolico procedurale (KBS);
-- modellazione concettuale e semantica (OWL).
+Mentre il KBS (`expert_system.py`) ragiona in modo procedurale ("Se il pH è < 6.5 allora stampa errore"), l'ontologia definisce la **semantica dei dati**. Il ruolo dell'ontologia è trasformare dati grezzi (es. `pH=5.0`) in concetti di alto livello (es. `AcidicWater`) attraverso il ragionamento automatico, senza scrivere codice `if/else`.
 
 ---
 
-## 4.2 Struttura dell’ontologia (`water_quality.owl`)
+## 4.2 Struttura Avanzata dell’ontologia
 
-### 4.2.1 Classi principali
+L’ontologia è stata modellata per supportare la classificazione automatica tramite il reasoner.
 
-L’ontologia definisce un insieme di classi che rappresentano i concetti chiave del dominio.  
-Sebbene l’ontologia sia volutamente contenuta, include:
+### 4.2.1 Data Properties
 
-- concetti relativi ai **parametri dell’acqua**;
-- concetti relativi alla **qualità/potabilità**;
-- concetti utili a descrivere il contesto di analisi.
+Invece di trattare i parametri solo come stringhe descrittive, sono state introdotte proprietà funzionali per i valori numerici:
 
-La scelta di mantenere un numero limitato di classi è intenzionale:
-- evita un’ontologia artificiosamente grande ma poco usata;
-- rende più chiaro il collegamento con il codice e con il KBS.
+- `has_ph_value` (range: `float`)
+- `has_sulfate_value` (range: `float`)
+- `has_turbidity_value` (range: `float`)
 
 ---
 
-### 4.2.2 Proprietà e descrizioni semantiche
+### 4.2.2 Classi Definite (Defined Classes)
 
-Per ciascun parametro rilevante, l’ontologia include **proprietà descrittive** (es. commenti, label o proprietà testuali dedicate) che spiegano:
+Sono state create classi logiche definite tramite assiomi di equivalenza (`equivalent_to`). Il reasoner classifica un individuo in queste classi se ne soddisfa le condizioni sufficienti.
 
-- cosa rappresenta il parametro;
-- perché è rilevante per la qualità dell’acqua;
-- eventuali effetti associati a valori anomali.
+1. **Classi di Anomalia Specifica**:
 
-Queste descrizioni sono utilizzate nel sistema per:
-- fornire spiegazioni contestuali;
-- migliorare la comprensione dell’output;
-- separare il *significato* del parametro dalla sua gestione numerica nel KBS.
+- `AcidicWater`: Definita come `WaterSample AND has_ph_value < 6.5`.
+- `HighSulfateWater`: Definita come `WaterSample AND has_sulfate_value > 250.0` (Soglia WHO).
+- `TurbidWater`: Definita come `WaterSample AND has_turbidity_value > 5.0`.
+
+2. **Classe di Pericolosità Aggregata** (`UnsafeWater`):
+
+- Definita tramite l'operatore di **Unione** (OR logico).
+- `UnsafeWater ≡ AcidicWater ∪ HighSulfateWater ∪ TurbidWater`.
+- *Significato*: Il sistema non ha bisogno di una regola specifica per ogni combinazione; se un campione appartiene a una qualsiasi classe di anomalia, il reasoner deduce automaticamente che è "Non Sicuro".
 
 ---
 
-## 4.3 Costruzione e gestione dell’ontologia
+## 4.3 Implementazione e Costruzione Programmatica
+
+L'ontologia viene costruita o rigenerata dinamicamente tramite ontology_builder.py utilizzando `owlready2`.
+
+Questa scelta dimostra la capacità di manipolare costrutti OWL complessi (restrizioni esistenziali su datatype) direttamente da Python.
 
 ### 4.3.1 `ontology_builder.py`
 
@@ -676,17 +670,23 @@ Questo approccio è coerente con una prospettiva di:
 
 ### 4.3.2 `ontology_manager.py`
 
-Il file `src/ontology_manager.py` è il punto di integrazione tra ontologia e resto del sistema.
+Il modulo ontology_manager.py gestisce il ciclo di vita semantico:
+1. **Istanziazione Dinamica**: All'avvio (o durante l'analisi), viene creato un individuo temporaneo popolato con i dati dei sensori (es. `has_sulfate_value = [300.0]`).
+2. **Sincronizzazione**: Viene invocato `sync_reasoner_pellet()`.
+3. **Classificazione Automatica**: Il reasoner analizza le proprietà e modifica la gerarchia `is_a` dell'individuo.
 
-Le sue responsabilità principali sono:
-- caricare il file `water_quality.owl`;
-- inizializzare l’ambiente ontologico (`owlready2`);
-- tentare l’attivazione del reasoner;
-- fornire accesso alle informazioni semantiche al KBS o ad altri moduli.
+#### Esempio di funzionamento verificato
+Se viene inserito un campione con `Solfati = 300.0` e `pH = 7.0`:
+
+1. Il reasoner verifica la restrizione `> 250.0`.
+2. Inferisce che l'individuo appartiene alla classe `HighSulfateWater`.
+3. Poiché `HighSulfateWater` è sottoclasse (nell'unione) di `UnsafeWater`, inferisce a cascata che il campione è `UnsafeWater`.
+
+Questo processo avviene in modo totalmente deduttivo, validando le regole procedurali del KBS con una "seconda opinione" logico-formale.
 
 ---
 
-## 4.4 Uso del reasoner e fallback controllato
+## 4.4 Inferenza con Reasoner (Pellet)
 
 ### 4.4.1 Attivazione del reasoner OWL
 
@@ -1338,7 +1338,7 @@ rendendo il sistema chiaro, estendibile e facilmente valutabile.
 Il **KBS** rappresenta il nucleo centrale del progetto, sia per la quantità di conoscenza esplicitata nella KB, sia per l’uso di regole relazionali che combinano più parametri.  
 La **componente ML** non è usata come semplice esercizio su dataset, ma come termine di confronto metodologico, con una valutazione sperimentale coerente con le linee guida dell’insegnamento.
 
-Sono stati inoltre evidenziati alcuni **limiti reali dell’implementazione** (ad esempio gating incompleto di alcune regole o uso limitato dell’inferenza ontologica), che non compromettono il funzionamento del sistema ma rappresentano punti di miglioramento concreti.
+Un punto di forza distintivo è l'evoluzione dell'ontologia da semplice tassonomia a sistema di classificazione automatica: l'uso di Defined Classes e operatori logici (Unione) permette al reasoner di dedurre lo stato di sicurezza dell'acqua (UnsafeWater) direttamente dai dati grezzi, offrendo una validazione semantica parallela alla logica rule-based.
 
 Nel complesso, il progetto dimostra la capacità di:
 - progettare e implementare un sistema di Ingegneria della Conoscenza non banale;

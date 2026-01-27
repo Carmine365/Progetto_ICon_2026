@@ -1,10 +1,10 @@
-from owlready2 import *
+from owlready2 import get_ontology, Thing, DataProperty, ConstrainedDatatype
 
 # 1. Crea l'ontologia
 onto = get_ontology("http://test.org/water_quality.owl")
 
 with onto:
-    # 2. Definizione delle Classi
+    # --- 1. CLASSI BASE ---
     class WaterSample(Thing):
         """Un campione di acqua analizzato"""
         pass
@@ -13,7 +13,7 @@ with onto:
         """Un parametro chimico-fisico dell'acqua"""
         pass
 
-    # 3. Definizione delle Proprietà
+    # --- 2. DATA PROPERTIES (Le "colonne" del tuo dataset in OWL) ---
     class descrizione_parametro(DataProperty):
         """Descrizione testuale del parametro (per la documentazione)"""
         domain = [Parameter]
@@ -24,11 +24,34 @@ with onto:
         domain = [WaterSample]
         range = [float]
 
-    # 2. CLASSE DEFINITA: "AcidicWater"
-    # Questa è la magia OWL. Diciamo che questa classe è EQUIVALENTE a:
-    # "Qualsiasi WaterSample che ha un valore di pH < 6.5"
+    # Proprietà per i Solfati
+    class has_sulfate_value(DataProperty):
+        domain = [WaterSample]
+        range = [float]
+
+    # Proprietà per la Torbidità
+    class has_turbidity_value(DataProperty):
+        domain = [WaterSample]
+        range = [float]
+
+    # --- 3. CLASSI DEFINITE (Il "Motore Logico") ---
+    # Classe A: Acqua Acida (pH < 6.5)
     class AcidicWater(WaterSample):
         equivalent_to = [WaterSample & has_ph_value.some(ConstrainedDatatype(float, max_exclusive=6.5))]
+
+    # Classe B: Acqua con Solfati Alti (Sulfate > 250 - soglia WHO)
+    class HighSulfateWater(WaterSample):
+        equivalent_to = [WaterSample & has_sulfate_value.some(ConstrainedDatatype(float, min_exclusive=250.0))]
+
+    # Classe C: Acqua Torbida (Turbidity > 5.0 - soglia WHO)
+    class TurbidWater(WaterSample):
+        equivalent_to = [WaterSample & has_turbidity_value.some(ConstrainedDatatype(float, min_exclusive=5.0))]
+
+    # --- 4. LA CLASSE "UNSAFE" (Unione Logica) ---
+    # Qui diciamo: "L'acqua NON sicura è quella che è Acida OPPURE ha Solfati Alti OPPURE è Torbida"
+    # L'operatore "|" in owlready2 rappresenta l'OR logico (Union)
+    class UnsafeWater(WaterSample):
+        equivalent_to = [AcidicWater | HighSulfateWater | TurbidWater]
 
     # 4. Creazione degli Individui (i parametri del CSV)
     # Creiamo le istanze esatte che il tuo codice water_ontology.py si aspetta

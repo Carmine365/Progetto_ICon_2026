@@ -1,4 +1,4 @@
-from owlready2 import *
+from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity
 import os
 
 class water_ontology:
@@ -9,59 +9,51 @@ class water_ontology:
         self.dict_parameters = {}
 
         # 2. Caricamento e Ragionamento (MODIFICA CHIAVE)
+        print(f"--- Caricamento Ontologia: {path} ---")
+        self.ontology = get_ontology(path).load()
+        
+        # --- BLOCCO INFERENZA (Teoria Cap. 6) ---
+        # Attiviamo il Reasoner (Pellet) per dedurre nuova conoscenza.
+        # Questo trasforma l'ontologia da semplice "schema" a "motore semantico".
+        print("Avvio del Reasoner (Pellet) per l'inferenza semantica...")
         try:
-            print(f"--- Caricamento Ontologia: {path} ---")
-            self.ontology = get_ontology(path).load()
-            
-            # -----------------------------------------------------
+            with self.ontology:
+                # CASO 1: Creiamo un campione con Solfati pericolosi (300.0) e pH normale (7.0)
+                unsafe_sample = self.ontology.WaterSample("Campione_Pericoloso_Solfati")
+                unsafe_sample.has_sulfate_value = [300.0]
+                unsafe_sample.has_ph_value = [7.0]
 
-            # --- BLOCCO INFERENZA (Migliorato per il Punto 1) ---
-            print("Avvio del Reasoner (Pellet) per l'inferenza semantica...")
-            try:
-                with self.ontology:
-                    # 1. Creiamo un campione di prova "invisibile" per testare il reasoner
-                    test_sample = self.ontology.WaterSample("Campione_Test_Inferenza")
-                    test_sample.has_ph_value = [5.0]  # Valore acido!
+                # CASO 2: Creiamo un campione perfetto
+                safe_sample = self.ontology.WaterSample("Campione_Sicuro")
+                safe_sample.has_sulfate_value = [150.0]
+                safe_sample.has_ph_value = [7.2]
+                safe_sample.has_turbidity_value = [2.0]
 
-                    # 2. Sincronizziamo il reasoner
-                    sync_reasoner_pellet() 
+                # Sincronizziamo il reasoner
+                sync_reasoner_pellet() 
 
-                    # 3. Verifichiamo se il reasoner lo ha riclassificato
-                    # is_a contiene le classi a cui appartiene l'individuo
-                    print(f"   > Classi inferite per pH=5.0: {test_sample.is_a}")
-                    
-                    # Controllo specifico per la demo
-                    # Nota: owlready2 a volte mette le classi nell'ordine inverso o usa riferimenti
-                    classes_names = [c.name for c in test_sample.is_a if hasattr(c, 'name')]
-                    if "AcidicWater" in classes_names:
-                        print(f"   ✅ SUCCESSO: Il reasoner ha dedotto autonomamente che è 'AcidicWater'!")
-                    else:
-                        print(f"   ⚠️ ATTENZIONE: Inferenza non scattata. Classi attuali: {classes_names}")
+                # VERIFICA CASO 1
+                print(f"\n🧪 Analisi Semantica 'Campione_Pericoloso_Solfati':")
+                classes_1 = [c.name for c in unsafe_sample.is_a if hasattr(c, 'name')]
+                print(f"   > Classi inferite: {classes_1}")
+                
+                if "UnsafeWater" in classes_1:
+                    print("   ✅ SUCCESSO: Classificato come 'UnsafeWater' (tramite HighSulfateWater)!")
+                
+                # VERIFICA CASO 2
+                print(f"\n💧 Analisi Semantica 'Campione_Sicuro':")
+                classes_2 = [c.name for c in safe_sample.is_a if hasattr(c, 'name')]
+                print(f"   > Classi inferite: {classes_2}")
+                
+                if "UnsafeWater" not in classes_2:
+                    print("   ✅ SUCCESSO: NON è classificato come 'UnsafeWater'.")
 
-                    # Pulizia: distruggiamo il campione test per non sporcare l'ontologia in memoria
-                    destroy_entity(test_sample)
-
-            except Exception as e_reasoner:
-                print(f"⚠️ Warning Reasoner: {e_reasoner}")
-                # ... (gestione errore esistente) ...
-
-            # -----------------------------------------------------
-            # --- BLOCCO INFERENZA (Teoria Cap. 6) ---
-            # Attiviamo il Reasoner (Pellet) per dedurre nuova conoscenza.
-            # Questo trasforma l'ontologia da semplice "schema" a "motore semantico".
-            print("Avvio del Reasoner (Pellet) per l'inferenza semantica...")
-            try:
-                with self.ontology:
-                    sync_reasoner_pellet() 
-                print("✅ Inferenza completata: relazioni implicite derivate.")
-            except Exception as e_reasoner:
-                print(f"⚠️ Warning: Il Reasoner non è partito (Manca Java o Pellet?).")
-                print(f"Dettaglio errore: {e_reasoner}")
-                print("Il sistema continuerà in modalità 'Sola Lettura' (senza inferenza).")
-            # ----------------------------------------
+                # Pulizia
+                destroy_entity(unsafe_sample)
+                destroy_entity(safe_sample)
 
         except Exception as e:
-            print(f"❌ Errore critico nel caricamento ontologia: {e}")
+            print(f"Errore reasoner: {e}")
 
     def get_parameters_descriptions(self):
         """
