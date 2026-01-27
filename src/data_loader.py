@@ -14,9 +14,12 @@ class water_data:
 
     def __init__(self):
         # Carica e pulisce i dati (rimuove righe con campi vuoti)
-        self.data = pd.read_csv(DIABETES_DATA_FILE).dropna()
+        self.data = pd.read_csv(DIABETES_DATA_FILE)
         
-        # 2. RIMOSSO 'del Pregnancies': Non serve, quella colonna non esiste qui.
+        # INVECE DI dropna():
+        # Sostituiamo i valori mancanti (NaN) con la media della colonna.
+        # dropna() cancellerebbe 1200+ righe, che sono troppe.
+        self.data.fillna(self.data.mean(), inplace=True)
         
         self.features_list = list(self.data.columns)
 

@@ -19,9 +19,8 @@ class water_model:
 
     def __init__(self, model, x, y, scores_dict: dict, test_size: float):
 
-        default_test_size: Final = 0.5
-
-        if self.__check_test_size(test_size) == False:
+        default_test_size: Final = 0.2  # 20% test è standard
+        if not (0 < test_size < 1):
             test_size = default_test_size
 
         self.model = model
