@@ -19,6 +19,17 @@ with onto:
         domain = [Parameter]
         range = [str]
 
+    # 1. NUOVA PROPRIETÀ: Definiamo che un WaterSample può avere un valore di pH
+    class has_ph_value(DataProperty):
+        domain = [WaterSample]
+        range = [float]
+
+    # 2. CLASSE DEFINITA: "AcidicWater"
+    # Questa è la magia OWL. Diciamo che questa classe è EQUIVALENTE a:
+    # "Qualsiasi WaterSample che ha un valore di pH < 6.5"
+    class AcidicWater(WaterSample):
+        equivalent_to = [WaterSample & has_ph_value.some(ConstrainedDatatype(float, max_exclusive=6.5))]
+
     # 4. Creazione degli Individui (i parametri del CSV)
     # Creiamo le istanze esatte che il tuo codice water_ontology.py si aspetta
 
@@ -52,7 +63,7 @@ with onto:
     # Istanza speciale per il risultato finale
     potability_status = Parameter("PotabilityStatus")
     potability_status.descrizione_parametro = ["Indica se l'acqua è sicura per il consumo umano (1) o no (0)."]
-
+        
 # 5. Salvataggio del file .owl
 output_file = "water_quality.owl"
 onto.save(file=output_file)

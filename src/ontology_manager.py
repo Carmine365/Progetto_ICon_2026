@@ -13,6 +13,39 @@ class water_ontology:
             print(f"--- Caricamento Ontologia: {path} ---")
             self.ontology = get_ontology(path).load()
             
+            # -----------------------------------------------------
+
+            # --- BLOCCO INFERENZA (Migliorato per il Punto 1) ---
+            print("Avvio del Reasoner (Pellet) per l'inferenza semantica...")
+            try:
+                with self.ontology:
+                    # 1. Creiamo un campione di prova "invisibile" per testare il reasoner
+                    test_sample = self.ontology.WaterSample("Campione_Test_Inferenza")
+                    test_sample.has_ph_value = [5.0]  # Valore acido!
+
+                    # 2. Sincronizziamo il reasoner
+                    sync_reasoner_pellet() 
+
+                    # 3. Verifichiamo se il reasoner lo ha riclassificato
+                    # is_a contiene le classi a cui appartiene l'individuo
+                    print(f"   > Classi inferite per pH=5.0: {test_sample.is_a}")
+                    
+                    # Controllo specifico per la demo
+                    # Nota: owlready2 a volte mette le classi nell'ordine inverso o usa riferimenti
+                    classes_names = [c.name for c in test_sample.is_a if hasattr(c, 'name')]
+                    if "AcidicWater" in classes_names:
+                        print(f"   ✅ SUCCESSO: Il reasoner ha dedotto autonomamente che è 'AcidicWater'!")
+                    else:
+                        print(f"   ⚠️ ATTENZIONE: Inferenza non scattata. Classi attuali: {classes_names}")
+
+                    # Pulizia: distruggiamo il campione test per non sporcare l'ontologia in memoria
+                    destroy_entity(test_sample)
+
+            except Exception as e_reasoner:
+                print(f"⚠️ Warning Reasoner: {e_reasoner}")
+                # ... (gestione errore esistente) ...
+
+            # -----------------------------------------------------
             # --- BLOCCO INFERENZA (Teoria Cap. 6) ---
             # Attiviamo il Reasoner (Pellet) per dedurre nuova conoscenza.
             # Questo trasforma l'ontologia da semplice "schema" a "motore semantico".
