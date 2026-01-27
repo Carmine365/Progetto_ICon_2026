@@ -278,6 +278,9 @@ Il sistema è organizzato secondo un’architettura **modulare e stratificata**,
 - **Strato decisionale operativo** → CSP / Scheduler  
 - **Strato predittivo/statistico** → Modulo ML  
 
+![Diagramma dell'Architettura del Sistema Ibrido](images/architettura_sistema.png)
+*Figura 1: Schema dell'architettura ibrida implementata. Le frecce indicano il flusso dei dati e delle decisioni tra i moduli KBS, Ontologia, CSP e ML.*
+
 Questi strati non sono isolati: comunicano tramite interfacce semplici e ben definite, ma restano **concettualmente separati**, così da:
 - migliorare la leggibilità del progetto;
 - facilitare la valutazione dei singoli approcci;
