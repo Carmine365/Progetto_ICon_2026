@@ -1,3 +1,6 @@
+import matplotlib.pyplot as plt
+import pandas as pd  # <--- È QUI
+import seaborn as sns
 from src.data_loader import water_data
 from src.ml_models import (
     water_log_reg, 
@@ -11,6 +14,30 @@ import warnings
 # Ignora warning di convergenza per demo didattica se le iterazioni sono poche
 warnings.filterwarnings('ignore') 
 
+def plot_model_comparison(results):
+    """
+    Genera un grafico a barre finale per confrontare i modelli.
+    """
+    df_res = pd.DataFrame(results)
+    
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x="Model", y="Accuracy", data=df_res, palette="viridis")
+    plt.ylim(0, 1.0)
+    plt.title("Confronto Accuratezza Modelli")
+    plt.ylabel("Accuracy Score")
+    plt.xlabel("Modello")
+    plt.xticks(rotation=45)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # FIX: Iteriamo con enumerate per avere un indice intero sicuro (0, 1, 2...)
+    # invece di affidarci all'indice di pandas che il linter vede come "Hashable"
+    for i, row in df_res.iterrows():
+        # Convertiamo esplicitamente 'i' in float per accontentare il linter
+        plt.text(float(i), row.Accuracy + 0.01, f"{row.Accuracy:.2f}", color='black', ha="center")
+        
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
     
     # 1. Caricamento Dati
@@ -18,42 +45,42 @@ if __name__ == "__main__":
     data = water_data()
     print("Dataset caricato correttamente.")
     
-    # 2. Addestramento Modelli Classici
-    print("\n--- 2. Esecuzione Modelli Classici (LogReg, DT, KNN) ---")
-    
-    # Logistic Regression
-    print("\n[Logistic Regression]")
-    log_reg = water_log_reg(data, 0.2)
-    log_reg.predict()
-    log_reg.print_metrics()
-    
-    # Decision Tree
-    print("\n[Decision Tree]")
-    dec_tree = water_dec_tree(data, 0.2)
-    dec_tree.predict()
-    dec_tree.print_metrics()
-    
-    # KNN
-    print("\n[K-Nearest Neighbors]")
-    knn = water_knn(data, 0.2, 5)
-    knn.predict()
-    knn.print_metrics()
-    
-    # 3. Addestramento Nuovi Modelli (Per Copertura Teoria ICon)
-    print("\n--- 3. Esecuzione Modelli Avanzati (Reti Neurali & Incertezza) ---")
-    
-    # Rete Neurale (Capitolo 8)
-    print("\n[Neural Network - MLPClassifier]")
-    print("Architettura: Input -> Hidden(64) -> Hidden(32) -> Output")
-    nn = water_neural_network(data, 0.2)
-    nn.predict()
-    nn.print_metrics()
-    
-    # Naive Bayes (Capitolo 9 - Ragionamento Probabilistico)
-    print("\n[Naive Bayes - GaussianNB]")
-    print("Modello Probabilistico basato sul Teorema di Bayes")
-    nb = water_naive_bayes(data, 0.2)
-    nb.predict()
-    nb.print_metrics()
+    final_results = []
+
+    # --- DEFINIZIONE LISTA MODELLI ---
+    # Usiamo un dizionario per ciclare in modo pulito
+    models_to_run = [
+        ("Logistic Regression", water_log_reg(data, 0.2)),
+        ("Decision Tree", water_dec_tree(data, 0.2)),
+        ("KNN (k=5)", water_knn(data, 0.2, 5)),
+        ("Neural Network (MLP)", water_neural_network(data, 0.2)),
+        ("Naive Bayes", water_naive_bayes(data, 0.2))
+    ]
+
+    print("\n--- 2. Addestramento e Generazione Grafici ---")
+
+    for name, model_obj in models_to_run:
+        print(f"\n[{name}] In esecuzione...")
+        
+        # 1. Addestramento
+        model_obj.predict()
+        
+        # 2. Stampa Metriche Testuali
+        model_obj.print_metrics()
+        
+        # 3. MOSTRA I GRAFICI (Ecco la parte che mancava!)
+        print(f"   -> Generazione Matrice di Confusione per {name}...")
+        model_obj.get_confusion_matrix()
+        
+        print(f"   -> Generazione Curva ROC per {name}...")
+        model_obj.get_roc_curve()
+        
+        # Salva l'accuratezza per il grafico finale
+        acc = model_obj.get_metric("Accuracy")
+        final_results.append({"Model": name, "Accuracy": acc})
+
+    # --- 3. CONFRONTO FINALE ---
+    print("\n--- 3. Confronto Finale ---")
+    plot_model_comparison(final_results)
     
     print("\n--- Analisi Completata ---")
