@@ -45,10 +45,10 @@ def train_and_evaluate_models(_data):
     # Configurazione modelli
     models_config = [
         ("Logistic Regression", waterLogReg(_data, 0.2)),
-        ("Decision Tree", waterDecTree(_data, 0.2)),
+        ("Decision Tree", waterDecTree(_data, 0.2, max_depth=10)),
         ("KNN (k=5)", waterKnn(_data, 0.2, 5)),
         ("Naive Bayes", waterNaiveBayes(_data, 0.2)),
-        ("Neural Network", waterNeuralNetwork(_data, 0.2))
+        ("Neural Network", waterNeuralNetwork(_data, 0.2, hidden_layers=(100, 50, 20)))
     ]
     
     for name, model in models_config:
@@ -88,7 +88,7 @@ st.title("💧 Water Quality Assessment System")
 tab1, tab2 = st.tabs(["🕵️ Sistema Esperto & Decisionale", "🤖 Machine Learning Lab"])
 
 # ==============================================================================
-# TAB 1: SISTEMA ESPERTO
+# TAB 1: SISTEMA ESPERTO (AGGIORNATO)
 # ==============================================================================
 with tab1:
     st.markdown("### Modulo Supporto alle Decisioni (DSS)")
@@ -98,12 +98,30 @@ with tab1:
     
     with col_input:
         st.info("📊 **Inserimento Parametri**")
+        
+        # --- NUOVA SEZIONE: OSSERVAZIONI (Fase 1) ---
+        with st.expander("Step 1: Osservazione Sensoriale", expanded=True):
+            st.caption("Prima dell'analisi, cosa noti?")
+            obs_torbida = st.checkbox("Acqua Torbida (Visiva)")
+            obs_odore = st.checkbox("Cattivo Odore")
+            obs_sapore = st.checkbox("Sapore Metallico")
+        
+        # --- INPUT DATI STRUMENTALI (Fase 2) ---
+        st.markdown("---")
+        st.caption("Step 2: Dati Strumentali")
         ph_input = st.slider("pH (0-14)", 0.0, 14.0, 7.0)
         sulfate_input = st.number_input("Solfati (mg/L)", 0.0, 500.0, 200.0)
         turbidity_input = st.slider("Torbidità (NTU)", 0.0, 10.0, 3.0)
         solids_input = st.number_input("Solidi (TDS ppm)", 0.0, 5000.0, 500.0)
         hardness_input = st.number_input("Durezza (mg/L)", 0.0, 500.0, 150.0)
         
+        st.markdown("---")
+        st.caption("Parametri Avanzati")
+        chloramines_input = st.number_input("Cloramine (ppm)", 0.0, 15.0, 4.0)
+        conductivity_input = st.number_input("Conducibilità (uS/cm)", 0.0, 1000.0, 400.0)
+        organic_input = st.number_input("Carbonio Organico (ppm)", 0.0, 30.0, 10.0)
+        thm_input = st.number_input("Trialometani (ug/L)", 0.0, 120.0, 60.0)
+
         st.markdown("---")
         st.write("**Contesto Bayesiano**")
         has_industry = st.checkbox("Industrie Vicine?")
@@ -113,52 +131,96 @@ with tab1:
 
     with col_res:
         if analyze_btn:
-            # 1. BAYES
+            # 1. BAYES (Analisi Probabilistica)
             bn = WaterRiskBayesianNetwork()
-            risk_prob = bn.get_risk_probability(has_industry, heavy_rain)
-            
+
+            # Passiamo TUTTE le evidenze raccolte dai checkbox
+            risk_prob = bn.get_risk_probability(
+                ind=has_industry,       # Industrie
+                rain=heavy_rain,        # Pioggia
+                odor=obs_odore,         # Odore
+                taste=obs_sapore,       # Sapore
+                visual=obs_torbida      # Vista
+            )     
+                   
             c1, c2 = st.columns(2)
             c1.metric("Probabilità Inquinamento", f"{risk_prob*100:.1f}%")
-            if risk_prob > 0.6:
-                c1.warning("⚠️ Rischio Ambientale Elevato!")
             
-            # 2. SISTEMA ESPERTO
+            if risk_prob > 0.8:
+                c1.error("☣️ Rischio CRITICO!")
+            elif risk_prob > 0.5:
+                c1.warning("⚠️ Rischio Elevato")
+            else:
+                c1.success("✅ Rischio Basso")
+            
+            # 2. SISTEMA ESPERTO (Analisi Regole)
             engine = WaterExpertGUI()
             engine.reset()
+            
+            # A. Passiamo le osservazioni (Nuova Funzionalità)
+            if obs_torbida: engine.declare(Fact(osservazione_torbida="si"))
+            if obs_odore: engine.declare(Fact(osservazione_odore="si"))
+            if obs_sapore: engine.declare(Fact(osservazione_sapore="si"))
+
+            # B. Passiamo i dati numerici
             engine.declare(Fact(param='ph', value=ph_input))
             engine.declare(Fact(param='sulfate', value=sulfate_input))
             engine.declare(Fact(param='turbidity', value=turbidity_input))
             engine.declare(Fact(param='solids', value=solids_input))
             engine.declare(Fact(param='hardness', value=hardness_input))
+            engine.declare(Fact(param='chloramines', value=chloramines_input))
+            engine.declare(Fact(param='conductivity', value=conductivity_input))
+            engine.declare(Fact(param='organic_carbon', value=organic_input))
+            engine.declare(Fact(param='trihalomethanes', value=thm_input))
+
+            # C. Avviamo il motore
             engine.run()
             
+            # D. Mostriamo i messaggi raccolti
             st.subheader("Risultati Analisi")
             
             if not engine.msgs:
-                st.success("Nessuna anomalia specifica rilevata dalle regole WHO.")
+                st.success("✅ Nessuna anomalia specifica rilevata dalle regole WHO.")
             else:
                 for msg in engine.msgs:
-                    if msg['type'] == 'error': st.error(msg['msg'])
-                    elif msg['type'] == 'warning': st.warning(msg['msg'])
-                    else: st.info(msg['msg'])
+                    if msg['type'] == 'error': 
+                        st.error(msg['msg'])
+                    elif msg['type'] == 'warning': 
+                        st.warning(msg['msg'])
+                    elif msg['type'] == 'success':
+                        st.success(msg['msg'])
+                    else: 
+                        st.info(msg['msg'])
 
-            # 3. ONTOLOGIA
-            is_corrosive = water_ontology.semantic_check(ph_input, sulfate_input)
-            if is_corrosive:
-                st.error("🛑 **Ontologia SWRL:** Acqua classificata come 'CorrosiveWater'.")
+            # 3. ONTOLOGIA (Analisi Semantica)
+            # Nota: Assicurati che water_ontology sia importato correttamente in alto
+            try:
+                is_corrosive = waterOntology.semantic_check(ph_input, sulfate_input)
+                if is_corrosive:
+                    st.error("🛑 **Ontologia SWRL:** Acqua classificata come 'CorrosiveWater'.")
+            except Exception as e:
+                st.warning(f"Modulo Ontologia non attivo o errore: {e}")
             
-            # 4. CSP SCHEDULER
+            # 4. CSP SCHEDULER (Pianificazione)
+            # Se il sistema esperto suggerisce un intervento (engine.csp_suggestion non è None)
             if engine.csp_suggestion:
                 st.markdown("---")
-                st.subheader("📅 Pianificazione Intervento")
-                csp = laboratory_csp(engine.csp_suggestion)
+                st.subheader(f"📅 Pianificazione Intervento: {engine.csp_suggestion.upper()}")
+                
+                # Chiama il tuo scheduler aggiornato con i vincoli
+                csp = laboratoryCsp(engine.csp_suggestion)
                 solutions = csp.get_solutions_list()
                 
                 if solutions:
-                    df_sched = pd.DataFrame([s.split(": ") for s in solutions], columns=["Turno", "Staff"])
-                    st.table(df_sched)
+                    st.write("Turni disponibili (filtrati per competenza e orari):")
+                    # Visualizzazione semplice come lista, dato che ora sono stringhe formattate
+                    for sol in solutions:
+                        st.text(sol) 
                 else:
-                    st.error("Nessun tecnico disponibile per i vincoli attuali.")
+                    st.error("❌ Nessun tecnico disponibile per i vincoli attuali (es. Orario chiusura laboratorio).")
+            else:
+                st.markdown("---")
+                st.info("ℹ️ Nessuna manutenzione necessaria al momento.")
 
 # ==============================================================================
 # TAB 2: MACHINE LEARNING (OTTIMIZZATO CON CACHE)

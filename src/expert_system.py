@@ -16,6 +16,10 @@ PH_MAX = 8.5
 TURBIDITY_MAX = 5.0
 SOLIDS_MAX = 1000
 HARDNESS_LIMIT = 300
+CHLORAMINES_MAX = 4.0   # mg/L
+CONDUCTIVITY_MAX = 800  # uS/cm
+ORGANIC_CARBON_MAX = 10.0 # ppm (Tipico < 2-4, ma dipende)
+THM_MAX = 80.0          # Trialometani (ug/L)
 
 def valid_response(response: str):
     return response.lower().strip() in ["si", "no"]
@@ -89,6 +93,32 @@ class BaseWaterExpert(KnowledgeEngine):
         if val > HARDNESS_LIMIT:
             self.notify(f"ℹ️ Acqua dura ({val} mg/L). Possibili incrostazioni.", "info")
 
+    @Rule(Fact(param='chloramines', value=MATCH.val))
+    def check_chloramines(self, val):
+        if val > CHLORAMINES_MAX:
+            self.notify(f"⚠️ Cloramine ALTE ({val} ppm). Sapore sgradevole/Rischio.", "warning")
+            self.declare(Fact(problema_chimico="cloramine"))
+            self.problems_count += 1
+
+    @Rule(Fact(param='conductivity', value=MATCH.val))
+    def check_conductivity(self, val):
+        if val > CONDUCTIVITY_MAX:
+            self.notify(f"ℹ️ Conducibilità alta ({val}). Presenza di ioni disciolti.", "info")
+
+    @Rule(Fact(param='organic_carbon', value=MATCH.val))
+    def check_organic_carbon(self, val):
+        if val > ORGANIC_CARBON_MAX:
+            self.notify(f"🔴 Carbonio Organico Alto ({val} ppm). Rischio biologico.", "error")
+            self.declare(Fact(problema_biologico="carbonio"))
+            self.problems_count += 1
+
+    @Rule(Fact(param='trihalomethanes', value=MATCH.val))
+    def check_trihalomethanes(self, val):
+        if val > THM_MAX:
+            self.notify(f"🔴 Trialometani PERICOLOSI ({val} ug/L). Cancerogeni.", "error")
+            self.declare(Fact(problema_tossico="thm"))
+            self.problems_count += 1
+
     # --- REGOLA RELAZIONALE COMPLESSA ---
     @Rule(Fact(param='ph', value=P(lambda x: x < 6.0)),
           Fact(param='sulfate', value=P(lambda x: x > 200)))
@@ -97,14 +127,14 @@ class BaseWaterExpert(KnowledgeEngine):
         self.declare(Fact(problem_type="critical"))
         self.csp_suggestion = "critical"
 
-    # --- INFERENZA NECESSITÀ INTERVENTO ---
-    @Rule(OR(Fact(problema_ph="acido"), Fact(problema_ph="basico"), Fact(problema_solfati="alto")))
+    # --- INFERENZA INTERVENTO (Aggiornata) ---
+    @Rule(OR(Fact(problema_ph=W()), Fact(problema_solfati=W()), Fact(problema_chimico=W()), Fact(problema_tossico=W())))
     def infer_chemical_need(self):
         if self.csp_suggestion != "critical":
             self.csp_suggestion = "chemical"
             self.declare(Fact(need_lab="chemical"))
 
-    @Rule(OR(Fact(problema_torbidita="alta"), Fact(problema_solidi="alto")))
+    @Rule(OR(Fact(problema_fisico=W()), Fact(problema_biologico=W())))
     def infer_physical_need(self):
         if self.csp_suggestion != "critical":
             self.csp_suggestion = "physical"
@@ -121,7 +151,7 @@ class WaterExpert(BaseWaterExpert):
     @DefFacts()
     def _load_data(self):
         # Carica le medie solo per la CLI se servono
-        self.mean_water_values = water_data().get_medium_values_water()
+        self.mean_water_values = waterData().get_medium_values_water()
         yield Fact(mode="cli")
 
     def notify(self, message, msg_type="info"):
@@ -137,7 +167,7 @@ class WaterExpert(BaseWaterExpert):
     def _run_scheduler_cli(self, issue_type):
         print(Fore.MAGENTA + f"\n[CSP] Ricerca turno per: {issue_type.upper()}..." + Fore.RESET)
         try:
-            csp = laboratory_csp(issue_type=issue_type)
+            csp = laboratoryCsp(issue_type=issue_type)
             solutions = csp.get_solutions_list()
             if solutions:
                 print(f"   >> Turno Assegnato: {solutions[0]}")
@@ -151,15 +181,40 @@ class WaterExpert(BaseWaterExpert):
     @Rule(Fact(inizio="si"), Fact(mode="cli"))
     def start_diagnosis(self):
         print(Fore.CYAN + "\n=== AVVIO SISTEMA ESPERTO (CLI) ===\n" + Fore.RESET)
+        self.declare(Fact(step="ask_observations"))
+
+    # --- NUOVA FASE: OSSERVAZIONALE ---
+    @Rule(Fact(step="ask_observations"))
+    def ask_observations(self):
+        print(Fore.YELLOW + "--- FASE 1: OSSERVAZIONE VISIVA ---" + Fore.RESET)
+        
+        # Domanda 1: Torbidità visiva
+        ans = input("L'acqua appare torbida o nuvolosa? [si/no]: ").lower()
+        if ans == "si":
+            self.declare(Fact(osservazione_torbida="si"))
+        
+        # Domanda 2: Odore
+        ans = input("L'acqua ha un cattivo odore (es. uova marce, cloro)? [si/no]: ").lower()
+        if ans == "si":
+            self.declare(Fact(osservazione_odore="si"))
+            print(Fore.YELLOW + " >> Nota: Possibile contaminazione batterica o eccesso di cloro." + Fore.RESET)
+
+        # Domanda 3: Sapore
+        ans = input("L'acqua ha un sapore metallico? [si/no]: ").lower()
+        if ans == "si":
+            self.declare(Fact(osservazione_sapore="si"))
+
+        print(Fore.GREEN + "Osservazioni registrate. Procediamo con l'analisi strumentale.\n" + Fore.RESET)
         self.declare(Fact(step="ask_ph"))
+
+    # --- FASE STRUMENTALE (Aggiornata) ---
 
     @Rule(Fact(step="ask_ph"))
     def ask_ph(self):
-        print("\nInserisci pH (0-14):")
+        print("Inserisci pH (0-14):")
         try:
             val = float(input())
             if valid_ph(val):
-                # DICHIARIAMO IL FATTO: La classe Base scatterà automaticamente per controllarlo!
                 self.declare(Fact(param='ph', value=val))
             else:
                 print("Valore fuori range.")
@@ -179,6 +234,11 @@ class WaterExpert(BaseWaterExpert):
     @Rule(Fact(step="ask_turbidity"))
     def ask_turbidity(self):
         print("\nInserisci Torbidità (NTU):")
+        
+        # INTEGRAZIONE: Se l'utente aveva visto acqua torbida, ricordaglielo
+        if self.facts.get(Fact(osservazione_torbida="si")):
+            print(Fore.YELLOW + "⚠️  NOTA: Avevi segnalato visivamente acqua torbida." + Fore.RESET)
+        
         try:
             val = float(input())
             self.declare(Fact(param='turbidity', value=val))
@@ -201,7 +261,43 @@ class WaterExpert(BaseWaterExpert):
             val = float(input())
             self.declare(Fact(param='hardness', value=val))
         except ValueError: pass
-        self.declare(Fact(fine_analisi="si"))
+        self.declare(Fact(step="ask_chloramines"))
+
+    # 6. Cloramine
+    @Rule(Fact(step="ask_chloramines"))
+    def ask_chloramines(self):
+        print("\n[6/9] Inserisci Cloramine (ppm):")
+        try:
+            self.declare(Fact(param='chloramines', value=float(input())))
+        except ValueError: pass
+        self.declare(Fact(step="ask_conductivity"))
+
+    # 7. Conducibilità
+    @Rule(Fact(step="ask_conductivity"))
+    def ask_conductivity(self):
+        print("\n[7/9] Inserisci Conducibilità (uS/cm):")
+        try:
+            self.declare(Fact(param='conductivity', value=float(input())))
+        except ValueError: pass
+        self.declare(Fact(step="ask_organic"))
+
+    # 8. Carbonio Organico
+    @Rule(Fact(step="ask_organic"))
+    def ask_organic(self):
+        print("\n[8/9] Inserisci Carbonio Organico (ppm):")
+        try:
+            self.declare(Fact(param='organic_carbon', value=float(input())))
+        except ValueError: pass
+        self.declare(Fact(step="ask_thm"))
+
+    # 9. Trialometani
+    @Rule(Fact(step="ask_thm"))
+    def ask_thm(self):
+        print("\n[9/9] Inserisci Trialometani (ug/L):")
+        try:
+            self.declare(Fact(param='trihalomethanes', value=float(input())))
+        except ValueError: pass
+        self.declare(Fact(fine_analisi="si")) # FINE
 
     # --- REAZIONE AGLI ALLERTI (CLI Specifico) ---
     @Rule(Fact(need_lab=MATCH.type))

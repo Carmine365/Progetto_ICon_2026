@@ -1,7 +1,7 @@
 from src.ml_models import *
 from numpy import linspace
 import matplotlib.pyplot as plt
-# IMPORT CORRETTO: Assicurati che water_data.py contenga la classe water_data
+
 from .data_loader import waterData 
 
 def get_linspace(start: int, end: int, step: int):
@@ -30,7 +30,7 @@ def metrics_graph_lr(data: waterData, test_size: float):
             data, int(iterations_vect[i]), test_size)
 
         model_i.predict()
-        # CORREZIONE KEY: "Accuracy" invece di "Accurancy"
+
         accuracy_vect.append(model_i.get_metric("Accuracy"))
         precision_vect.append(model_i.get_metric("Precision"))
         recall_vect.append(model_i.get_metric("Recall"))
