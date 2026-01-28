@@ -1,4 +1,4 @@
-from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity, Thing
+from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity, Thing, Imp, DataPropertyClass
 import os
 
 class water_ontology:
@@ -15,12 +15,23 @@ class water_ontology:
         except Exception as e:
             print(f"[ERRORE] Impossibile caricare l'ontologia: {e}")
             return
-
+        """
         # 3. BLOCCO INFERENZA DI TEST (Codice Originale Importante!)
         # Serve a dimostrare che il motore semantico funziona all'avvio
         print("Avvio del Reasoner (Pellet) per test di inferenza iniziale...")
         try:
             with self.ontology:
+
+                # A. PULIZIA PREVENTIVA (Fix per il bug degli apostrofi)
+                self._sanitize_strings_for_reasoner()
+
+                # B. ESEMPIO DI "PIÙ INFERENZA": Aggiunta Regola SWRL Dinamica
+                # Se non esiste già, aggiungiamo una regola che deduce "Danger" se pH < 5
+                # (Questa è la vera potenza: creare regole logiche da codice)
+                rule = Imp()
+                rule.set_as_rule("WaterSample(?w), has_ph_value(?w, ?p), lessThan(?p, 5.0) -> CorrosiveWater(?w)")
+
+
                 # Creiamo un campione di test sicuramente pericoloso
                 test_sample = self.ontology.WaterSample("Test_Init_Sample")
                 test_sample.has_sulfate_value = [300.0]  # Alto
@@ -39,9 +50,40 @@ class water_ontology:
                 
         except Exception as e:
             print(f"Warning: Reasoner non disponibile o errore nel test iniziale: {e}")
-
+        """
         # 4. Carichiamo i parametri disponibili (Codice Originale)
         self.load_parameters()
+
+    def _sanitize_strings_for_reasoner(self):
+        """
+        Rimuove caratteri illegali (come l'apostrofo) dalle proprietà stringa
+        delle istanze per evitare il crash 'illegal escape sequence' di Pellet.
+        """
+        if not self.ontology:
+            return
+        try:
+            for i in self.ontology.individuals():
+                # Itera su tutte le proprietà dati dell'individuo
+                for prop in i.get_properties():
+                    # Se è una DataProperty e il valore è stringa
+                    if isinstance(prop, DataPropertyClass):
+                        values = getattr(i, prop.name)
+                        new_values = []
+                        changed = False
+                        for v in values:
+                            if isinstance(v, str) and "'" in v:
+                                # Sostituisce l'apostrofo con uno spazio o nulla
+                                v_clean = v.replace("'", " ") 
+                                new_values.append(v_clean)
+                                changed = True
+                            else:
+                                new_values.append(v)
+                        
+                        if changed:
+                            setattr(i, prop.name, new_values)
+                            # print(f"[FIX] Sanitizzata stringa in {i.name}.{prop.name}")
+        except Exception as e:
+            print(f"Errore durante sanitizzazione stringhe: {e}")
 
     def load_parameters(self):
         """

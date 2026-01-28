@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 import collections.abc
 import collections
 
-# --- FIX COMPATIBILITÀ PYTHON 3.10+ (Per Experta) ---
+# --- FIX COMPATIBILITÀ PYTHON 3.10+ ---
 if not hasattr(collections, 'Mapping'): collections.Mapping = collections.abc.Mapping
 if not hasattr(collections, 'MutableMapping'): collections.MutableMapping = collections.abc.MutableMapping
 if not hasattr(collections, 'Iterable'): collections.Iterable = collections.abc.Iterable
@@ -11,10 +13,17 @@ if not hasattr(collections, 'Iterable'): collections.Iterable = collections.abc.
 from experta import *
 from src.scheduler import laboratory_csp
 from src.bayesian_model import WaterRiskBayesianNetwork
-# Importiamo il manager ontologico (con l'alias corretto)
 from src.ontology_manager import manager as water_ontology
+from src.data_loader import water_data
+from src.ml_models import (
+    water_log_reg, 
+    water_dec_tree, 
+    water_knn, 
+    water_neural_network, 
+    water_naive_bayes
+)
 
-# --- CLASSE ESPERTO PER GUI (Tutte le regole ripristinate) ---
+# --- CLASSE ESPERTO PER GUI ---
 class WaterExpertGUI(KnowledgeEngine):
     def __init__(self):
         super().__init__()
@@ -29,7 +38,6 @@ class WaterExpertGUI(KnowledgeEngine):
     def _initial_action(self):
         yield Fact(inizio="si")
 
-    # 1. ANALISI pH
     @Rule(Fact(param='ph', value=MATCH.val))
     def check_ph(self, val):
         if val < 6.5:
@@ -43,7 +51,6 @@ class WaterExpertGUI(KnowledgeEngine):
         else:
             self.log("✅ pH nella norma.", "success")
 
-    # 2. ANALISI SOLFATI
     @Rule(Fact(param='sulfate', value=MATCH.val))
     def check_sulfate(self, val):
         if val > 250:
@@ -53,7 +60,6 @@ class WaterExpertGUI(KnowledgeEngine):
         else:
             self.log("✅ Solfati nella norma.", "success")
 
-    # 3. ANALISI TORBIDITÀ (La regola che mancava!)
     @Rule(Fact(param='turbidity', value=MATCH.val))
     def check_turbidity(self, val):
         if val > 5.0:
@@ -63,7 +69,6 @@ class WaterExpertGUI(KnowledgeEngine):
         else:
             self.log("✅ Torbidità nella norma.", "success")
 
-    # 4. ANALISI SOLIDI (TDS) - Ripristinata
     @Rule(Fact(param='solids', value=MATCH.val))
     def check_solids(self, val):
         if val > 1000:
@@ -71,152 +76,199 @@ class WaterExpertGUI(KnowledgeEngine):
             self.declare(Fact(problema_solidi="alto"))
             self.problems_count += 1
 
-    # 5. ANALISI DUREZZA - Ripristinata
     @Rule(Fact(param='hardness', value=MATCH.val))
     def check_hardness(self, val):
         if val > 300:
             self.log(f"ℹ️ Acqua dura ({val} mg/L). Possibili incrostazioni.", "info")
 
-    # 6. REGOLE RELAZIONALI (Combinazioni)
     @Rule(Fact(param='ph', value=P(lambda x: x < 6.0)),
           Fact(param='sulfate', value=P(lambda x: x > 200)))
     def corrosion_risk(self):
         self.log("🔥 COMBINAZIONE CRITICA: pH Acido + Solfati Alti! Rischio corrosione tubature.", "error")
         self.declare(Fact(problem_type="critical"))
 
-    # 7. ATTIVAZIONE SCHEDULER (CSP)
-    # Laboratorio Chimico (pH o Solfati)
     @Rule(OR(Fact(problema_ph="acido"), Fact(problema_ph="basico"), Fact(problema_solfati="alto")))
     def schedule_chemical(self):
         if self.csp_suggestion != "critical":
             self.csp_suggestion = "chemical"
 
-    # Laboratorio Fisico (Torbidità o Solidi)
     @Rule(OR(Fact(problema_torbidita="alta"), Fact(problema_solidi="alto")))
     def schedule_physical(self):
         if self.csp_suggestion != "critical":
             self.csp_suggestion = "physical"
 
-    # Squadra Emergenza (Problemi Critici)
     @Rule(Fact(problem_type="critical"))
     def schedule_critical(self):
         self.csp_suggestion = "critical"
 
 
-# --- INTERFACCIA GRAFICA STREAMLIT ---
+# --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Water Quality DSS", layout="wide", page_icon="💧")
-
 st.title("💧 Water Quality Assessment System")
-st.markdown("Sistema Ibrido: **KBS (Regole)** + **Ontologia (Semantica)** + **Bayes (Probabilità)** + **CSP (Turni)**")
 
-# --- COLONNA LATERALE (INPUT COMPLETI) ---
-with st.sidebar:
-    st.header("1. Dati Sensori")
-    # Tutti i parametri del programma originale
-    ph_input = st.slider("pH (0-14)", 0.0, 14.0, 7.0, help="Range ottimale: 6.5 - 8.5")
-    sulfate_input = st.number_input("Solfati (mg/L)", 0.0, 500.0, 200.0, step=10.0)
-    turbidity_input = st.slider("Torbidità (NTU)", 0.0, 10.0, 3.0, help="Max: 5.0")
-    solids_input = st.number_input("Solidi Totali (TDS ppm)", 0.0, 5000.0, 500.0, step=50.0)
-    hardness_input = st.number_input("Durezza (mg/L)", 0.0, 500.0, 150.0, step=10.0)
+# CREAZIONE TAB (SCHEDE)
+tab1, tab2 = st.tabs(["🕵️ Sistema Esperto & Decisionale", "🤖 Machine Learning Lab"])
+
+# ==============================================================================
+# TAB 1: SISTEMA ESPERTO (Logica di main_expert.py + main_expert_gui)
+# ==============================================================================
+with tab1:
+    st.markdown("### Modulo Supporto alle Decisioni (DSS)")
+    st.markdown("Analisi basata su **Regole (WHO)**, **Ontologie** e **Probabilità Bayesiana**.")
     
-    st.header("2. Osservazioni Qualitative")
-    # Le domande "tante cose" che mancavano
-    obs_smell = st.checkbox("Cattivo Odore?")
-    obs_taste = st.checkbox("Sapore Sgradevole?")
+    col_input, col_res = st.columns([1, 2])
     
-    st.header("3. Contesto Ambientale (Bayes)")
-    has_industry = st.checkbox("Industrie Vicine?")
-    heavy_rain = st.checkbox("Piogge Intense?")
-    
-    run_btn = st.button("AVVIA ANALISI 🚀", type="primary", use_container_width=True)
-
-# --- LOGICA ESECUZIONE ---
-if run_btn:
-    # 1. MODULO BAYESIANO (Stima Rischio a Priori)
-    bn = WaterRiskBayesianNetwork()
-    risk_prob = bn.get_risk_probability(has_industry, heavy_rain)
-    
-    # Dashboard Metriche
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Probabilità Inquinamento (Bayes)", f"{risk_prob*100:.1f}%", delta_color="inverse")
-    
-    # Avviso Rischio Bayesiano
-    if risk_prob > 0.6:
-        st.warning(f"⚠️ Attenzione: Il modello probabilistico indica un alto rischio ambientale ({risk_prob:.2f})!")
-
-    st.divider()
-
-    col_kbs, col_onto = st.columns(2)
-
-    with col_kbs:
-        st.subheader("🕵️ Diagnosi Sistema Esperto")
-        # Inizializza Motore Experta
-        engine = WaterExpertGUI()
-        engine.reset()
+    with col_input:
+        st.info("📊 **Inserimento Parametri**")
+        ph_input = st.slider("pH (0-14)", 0.0, 14.0, 7.0)
+        sulfate_input = st.number_input("Solfati (mg/L)", 0.0, 500.0, 200.0)
+        turbidity_input = st.slider("Torbidità (NTU)", 0.0, 10.0, 3.0)
+        solids_input = st.number_input("Solidi (TDS ppm)", 0.0, 5000.0, 500.0)
+        hardness_input = st.number_input("Durezza (mg/L)", 0.0, 500.0, 150.0)
         
-        # Caricamento Fatti Numerici
-        engine.declare(Fact(param='ph', value=ph_input))
-        engine.declare(Fact(param='sulfate', value=sulfate_input))
-        engine.declare(Fact(param='turbidity', value=turbidity_input))
-        engine.declare(Fact(param='solids', value=solids_input))
-        engine.declare(Fact(param='hardness', value=hardness_input))
+        st.markdown("---")
+        st.write("**Contesto Bayesiano**")
+        has_industry = st.checkbox("Industrie Vicine?")
+        heavy_rain = st.checkbox("Piogge Intense?")
         
-        # Caricamento Fatti Qualitativi (Opzionale per regole future)
-        if obs_smell: engine.declare(Fact(cattivo_odore="si"))
-        
-        engine.run()
-        
-        # Visualizzazione Messaggi
-        if not engine.msgs:
-            st.success("✅ Nessuna anomalia rilevata dalle regole.")
-        else:
-            for item in engine.msgs:
-                if item['type'] == 'error': st.error(item['msg'])
-                elif item['type'] == 'warning': st.warning(item['msg'])
-                else: st.info(item['msg'])
+        analyze_btn = st.button("Avvia Diagnosi", type="primary", use_container_width=True)
 
-    with col_onto:
-        st.subheader("🦉 Analisi Semantica (SWRL)")
-        # Analisi Ontologica
-        is_corrosive = water_ontology.semantic_check(ph_input, sulfate_input)
-        
-        if is_corrosive:
-            st.error("🛑 **Rilevamento Semantico:** Regola SWRL attivata!")
-            st.markdown("""
-            Il reasoner ha dedotto che il campione appartiene alla classe **CorrosiveWater**.
-            > *Logica: (pH < 6.0 ∧ Solfati > 200) → Corrosive*
-            """)
-        else:
-            st.success("✅ Nessuna classe di pericolo inferita semanticamente.")
-
-    st.divider()
-
-    # 3. PIANIFICAZIONE (CSP)
-    st.subheader("📅 Gestione Operativa (CSP Scheduler)")
-    
-    if engine.csp_suggestion:
-        problem_type = engine.csp_suggestion
-        st.markdown(f"Tipo Intervento Richiesto: **{problem_type.upper()}**")
-        
-        # Risoluzione CSP
-        csp = laboratory_csp(problem_type)
-        solutions = csp.get_solutions_list()
-        
-        if solutions:
-            # Creiamo un DataFrame per una tabella più bella
-            data = []
-            for sol in solutions:
-                # Esempio stringa: "Lunedi - Mattina (08-14): Dr. Rossi"
-                parts = sol.split(": ")
-                day_turn = parts[0]
-                staff = parts[1]
-                data.append({"Turno": day_turn, "Personale Assegnato": staff})
+    with col_res:
+        if analyze_btn:
+            # 1. BAYES
+            bn = WaterRiskBayesianNetwork()
+            risk_prob = bn.get_risk_probability(has_industry, heavy_rain)
             
-            st.table(pd.DataFrame(data))
-        else:
-            st.error("❌ Nessun turno disponibile compatibile con i vincoli!")
-    else:
-        st.info("👍 Nessun intervento tecnico necessario.")
+            c1, c2 = st.columns(2)
+            c1.metric("Probabilità Inquinamento", f"{risk_prob*100:.1f}%")
+            if risk_prob > 0.6:
+                c1.warning("⚠️ Rischio Ambientale Elevato!")
+            
+            # 2. SISTEMA ESPERTO
+            engine = WaterExpertGUI()
+            engine.reset()
+            engine.declare(Fact(param='ph', value=ph_input))
+            engine.declare(Fact(param='sulfate', value=sulfate_input))
+            engine.declare(Fact(param='turbidity', value=turbidity_input))
+            engine.declare(Fact(param='solids', value=solids_input))
+            engine.declare(Fact(param='hardness', value=hardness_input))
+            engine.run()
+            
+            st.subheader("Risultati Analisi")
+            
+            # Visualizzazione messaggi regole
+            if not engine.msgs:
+                st.success("Nessuna anomalia specifica rilevata dalle regole WHO.")
+            else:
+                for msg in engine.msgs:
+                    if msg['type'] == 'error': st.error(msg['msg'])
+                    elif msg['type'] == 'warning': st.warning(msg['msg'])
+                    else: st.info(msg['msg'])
 
-else:
-    st.info("👈 Configura i parametri a sinistra per iniziare.")
+            # 3. ONTOLOGIA
+            is_corrosive = water_ontology.semantic_check(ph_input, sulfate_input)
+            if is_corrosive:
+                st.error("🛑 **Ontologia SWRL:** Acqua classificata come 'CorrosiveWater'.")
+            
+            # 4. CSP SCHEDULER
+            if engine.csp_suggestion:
+                st.markdown("---")
+                st.subheader("📅 Pianificazione Intervento")
+                csp = laboratory_csp(engine.csp_suggestion)
+                solutions = csp.get_solutions_list()
+                
+                if solutions:
+                    df_sched = pd.DataFrame([s.split(": ") for s in solutions], columns=["Turno", "Staff"])
+                    st.table(df_sched)
+                else:
+                    st.error("Nessun tecnico disponibile per i vincoli attuali.")
+
+# ==============================================================================
+# TAB 2: MACHINE LEARNING (Logica di main_ml.py)
+# ==============================================================================
+with tab2:
+    st.markdown("### 🤖 Laboratorio Machine Learning")
+    st.markdown("Addestramento modelli sul dataset `water_potability.csv`.")
+    
+    if st.button("🚀 Avvia Training e Confronto Modelli", key="train_btn"):
+        with st.spinner("Caricamento dati e addestramento in corso... (potrebbe richiedere qualche secondo)"):
+            
+            # 1. Caricamento Dati
+            data = water_data()
+            results = []
+            
+            # Lista modelli
+            models_list = [
+                ("Logistic Regression", water_log_reg(data, 0.2)),
+                ("Decision Tree", water_dec_tree(data, 0.2)),
+                ("KNN (k=5)", water_knn(data, 0.2, 5)),
+                ("Naive Bayes", water_naive_bayes(data, 0.2)),
+                ("Neural Network", water_neural_network(data, 0.2))
+            ]
+            
+            # Colonne per i risultati
+            st.write(f"Dataset caricato: **{len(data.get_data())}** campioni.")
+            
+            # Creiamo i grafici per ogni modello
+            for name, model in models_list:
+                st.markdown(f"#### 🔹 {name}")
+                
+                # Cross Validation veloce (per non bloccare troppo la UI riduciamo i fold se necessario)
+                # Qui usiamo la logica del main_ml.py
+                try:
+                    acc, std = model.evaluate_with_cross_validation(folds=5)
+                    st.write(f"**Accuracy Media (CV):** {acc:.4f} (± {std:.4f})")
+                    results.append({"Model": name, "Accuracy": acc})
+                except Exception as e:
+                    st.error(f"Errore CV: {e}")
+
+                # Training su Split singolo per grafici
+                model.predict()
+                
+                # Grafici in colonne
+                gc1, gc2 = st.columns(2)
+                
+                # Matrice Confusione
+                with gc1:
+                    if model.y_test is not None:
+                        from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+                        cm = confusion_matrix(model.y_test, model.y_predicted)
+                        fig_cm, ax_cm = plt.subplots()
+                        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+                        disp.plot(cmap="Blues", ax=ax_cm)
+                        ax_cm.set_title(f"Confusion Matrix - {name}")
+                        st.pyplot(fig_cm)
+                
+                # ROC Curve
+                with gc2:
+                    if hasattr(model.model, "predict_proba"):
+                        from sklearn.metrics import roc_curve, auc
+                        y_probs = model.model.predict_proba(model.x_test)[:, 1]
+                        fpr, tpr, _ = roc_curve(model.y_test, y_probs)
+                        roc_auc = auc(fpr, tpr)
+                        
+                        fig_roc, ax_roc = plt.subplots()
+                        ax_roc.plot(fpr, tpr, color='darkorange', lw=2, label=f'AUC = {roc_auc:.2f}')
+                        ax_roc.plot([0, 1], [0, 1], color='navy', linestyle='--')
+                        ax_roc.set_title(f"ROC Curve - {name}")
+                        ax_roc.legend(loc="lower right")
+                        st.pyplot(fig_roc)
+                    else:
+                        st.info("ROC Curve non disponibile per questo modello.")
+                
+                st.divider()
+
+            # CONFRONTO FINALE
+            st.subheader("🏆 Confronto Finale Accuratezza")
+            df_res = pd.DataFrame(results)
+            
+            fig_bar, ax_bar = plt.subplots(figsize=(10, 5))
+            sns.barplot(x="Model", y="Accuracy", data=df_res, palette="viridis", ax=ax_bar)
+            ax_bar.set_ylim(0, 1.0)
+            for i, row in df_res.iterrows():
+                ax_bar.text(float(i), row.Accuracy + 0.01, f"{row.Accuracy:.2f}", color='black', ha="center")
+            
+            st.pyplot(fig_bar)
+
+    else:
+        st.info("Clicca il pulsante sopra per avviare la pipeline di Machine Learning.")
