@@ -11,6 +11,22 @@
 
 ---
 
+## 👥 Autori
+
+Progetto realizzato per l'esame di Ingegneria della Conoscenza.
+
+* **Carmine Giove**
+* Matricola: 797656
+* Email: c.giove10@studenti.uniba.it
+
+
+* **Claudio Gualberti**
+* Matricola: 801963
+* Email: c.gualberti@studenti.uniba.it
+
+
+---
+
 ## 📋 Descrizione del Progetto
 
 Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per la valutazione della qualità dell'acqua. L'architettura è ibrida e combina due approcci dell'Intelligenza Artificiale:
@@ -83,7 +99,7 @@ Un agente intelligente implementato con la libreria `experta` (basata sull'algor
 1. **Prerequisiti:** Python 3.10 o superiore.
 2. **Clonare la repository** (o scaricare lo zip):
 ```bash
-git clone [URL_REPOSITORY]
+git clone https://github.com/Carmine365/Progetto_ICon_2026.git
 cd WATER_QUALITY_PROJECT
 
 ```
@@ -126,22 +142,6 @@ python main_expert.py
 
 ---
 
-## 👥 Autori
-
-Progetto realizzato per l'esame di Ingegneria della Conoscenza.
-
-* **Carmine Giove**
-* Matricola: 797656
-* Email: c.giove10@studenti.uniba.it
-
-
-* **Claudio Gualberti**
-* Matricola: 801963
-* Email: c.gualberti@studenti.uniba.it
-
-
-
----
 
 *Powered by Python, Scikit-Learn, Experta & Owlready2.*
 
