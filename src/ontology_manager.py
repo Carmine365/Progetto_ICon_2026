@@ -1,10 +1,13 @@
 from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity, Thing, Imp, DataPropertyClass
 import os
 
-class water_ontology:
+class waterOntology:
     def __init__(self):
         # 1. Definizione Percorso Ontologia
-        path = os.path.join("ontology", "water_quality.owl")
+        # --- FIX PERCORSO ASSOLUTO ---
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = os.path.join(BASE_DIR, "ontology", "water_quality.owl")
+
         self.ontology = None
         self.dict_parameters = {}
 
@@ -149,4 +152,4 @@ class water_ontology:
             return is_corrosive
 
 # --- ISTANZA GLOBALE ---
-manager = water_ontology()
+manager = waterOntology()

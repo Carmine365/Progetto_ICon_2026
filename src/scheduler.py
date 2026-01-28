@@ -1,6 +1,6 @@
 from constraint import *
 
-class laboratory_csp(Problem):
+class laboratoryCsp(Problem):
     """
     Gestisce la pianificazione dei turni di manutenzione usando 
     la teoria dei Constraint Satisfaction Problems (CSP).

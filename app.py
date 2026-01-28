@@ -11,106 +11,84 @@ if not hasattr(collections, 'MutableMapping'): collections.MutableMapping = coll
 if not hasattr(collections, 'Iterable'): collections.Iterable = collections.abc.Iterable
 
 from experta import *
-from src.scheduler import laboratory_csp
+from src.scheduler import laboratoryCsp
 from src.bayesian_model import WaterRiskBayesianNetwork
-from src.ontology_manager import manager as water_ontology
-from src.data_loader import water_data
+from src.ontology_manager import manager as waterOntology
+from src.data_loader import waterData
 from src.ml_models import (
-    water_log_reg, 
-    water_dec_tree, 
-    water_knn, 
-    water_neural_network, 
-    water_naive_bayes
+    waterLogReg, 
+    waterDecTree, 
+    waterKnn, 
+    waterNeuralNetwork, 
+    waterNaiveBayes
 )
+# Importiamo la classe Base che hai creato nel passo precedente
+from src.expert_system import BaseWaterExpert 
+
+# --- FUNZIONI DI CACHING (IL PUNTO 2) ---
+
+@st.cache_data
+def load_dataset():
+    """Carica il dataset una volta sola."""
+    return waterData()
+
+@st.cache_resource
+def train_and_evaluate_models(_data):
+    """
+    Esegue il training e la Cross Validation dei modelli.
+    Usa cache_resource perché restituisce oggetti complessi (modelli).
+    L'argomento _data ha l'underscore per evitare che Streamlit provi a farne l'hashing (lento).
+    """
+    results_stats = []
+    trained_models_list = []
+    
+    # Configurazione modelli
+    models_config = [
+        ("Logistic Regression", waterLogReg(_data, 0.2)),
+        ("Decision Tree", waterDecTree(_data, 0.2)),
+        ("KNN (k=5)", waterKnn(_data, 0.2, 5)),
+        ("Naive Bayes", waterNaiveBayes(_data, 0.2)),
+        ("Neural Network", waterNeuralNetwork(_data, 0.2))
+    ]
+    
+    for name, model in models_config:
+        # 1. Cross Validation (Operazione Lenta)
+        try:
+            # Gestione robusta del ritorno (tupla o valore singolo)
+            res = model.evaluate_with_cross_validation(folds=5)
+            if isinstance(res, tuple):
+                acc, std = res
+            else:
+                acc, std = res, 0.0
+            
+            results_stats.append({"Model": name, "Accuracy": acc, "Std": std})
+        except Exception as e:
+            results_stats.append({"Model": name, "Accuracy": 0.0, "Std": 0.0, "Error": str(e)})
+
+        # 2. Fit su split singolo (per generare grafici ROC/Confusion Matrix)
+        model.predict()
+        trained_models_list.append((name, model))
+        
+    return results_stats, trained_models_list
 
 # --- CLASSE ESPERTO PER GUI ---
-class WaterExpertGUI(KnowledgeEngine):
+class WaterExpertGUI(BaseWaterExpert):
     def __init__(self):
         super().__init__()
         self.msgs = []
-        self.csp_suggestion = None 
-        self.problems_count = 0
+        # self.csp_suggestion e self.problems_count sono ereditati dalla Base
 
-    def log(self, message, type="info"):
-        self.msgs.append({"msg": message, "type": type})
-
-    @DefFacts()
-    def _initial_action(self):
-        yield Fact(inizio="si")
-
-    @Rule(Fact(param='ph', value=MATCH.val))
-    def check_ph(self, val):
-        if val < 6.5:
-            self.log(f"🔴 pH ACIDO rilevato ({val}). Corrosivo!", "error")
-            self.declare(Fact(problema_ph="acido"))
-            self.problems_count += 1
-        elif val > 8.5:
-            self.log(f"🔴 pH BASICO rilevato ({val}).", "error")
-            self.declare(Fact(problema_ph="basico"))
-            self.problems_count += 1
-        else:
-            self.log("✅ pH nella norma.", "success")
-
-    @Rule(Fact(param='sulfate', value=MATCH.val))
-    def check_sulfate(self, val):
-        if val > 250:
-            self.log(f"⚠️ Solfati ALTI ({val} mg/L).", "warning")
-            self.declare(Fact(problema_solfati="alto"))
-            self.problems_count += 1
-        else:
-            self.log("✅ Solfati nella norma.", "success")
-
-    @Rule(Fact(param='turbidity', value=MATCH.val))
-    def check_turbidity(self, val):
-        if val > 5.0:
-            self.log(f"🔴 Torbidità ALTA ({val} NTU). Acqua sporca.", "error")
-            self.declare(Fact(problema_torbidita="alta"))
-            self.problems_count += 1
-        else:
-            self.log("✅ Torbidità nella norma.", "success")
-
-    @Rule(Fact(param='solids', value=MATCH.val))
-    def check_solids(self, val):
-        if val > 1000:
-            self.log(f"🔴 TDS Alto ({val} ppm). Acqua troppo mineralizzata.", "error")
-            self.declare(Fact(problema_solidi="alto"))
-            self.problems_count += 1
-
-    @Rule(Fact(param='hardness', value=MATCH.val))
-    def check_hardness(self, val):
-        if val > 300:
-            self.log(f"ℹ️ Acqua dura ({val} mg/L). Possibili incrostazioni.", "info")
-
-    @Rule(Fact(param='ph', value=P(lambda x: x < 6.0)),
-          Fact(param='sulfate', value=P(lambda x: x > 200)))
-    def corrosion_risk(self):
-        self.log("🔥 COMBINAZIONE CRITICA: pH Acido + Solfati Alti! Rischio corrosione tubature.", "error")
-        self.declare(Fact(problem_type="critical"))
-
-    @Rule(OR(Fact(problema_ph="acido"), Fact(problema_ph="basico"), Fact(problema_solfati="alto")))
-    def schedule_chemical(self):
-        if self.csp_suggestion != "critical":
-            self.csp_suggestion = "chemical"
-
-    @Rule(OR(Fact(problema_torbidita="alta"), Fact(problema_solidi="alto")))
-    def schedule_physical(self):
-        if self.csp_suggestion != "critical":
-            self.csp_suggestion = "physical"
-
-    @Rule(Fact(problem_type="critical"))
-    def schedule_critical(self):
-        self.csp_suggestion = "critical"
-
+    def notify(self, message, msg_type="info"):
+        self.msgs.append({"msg": message, "type": msg_type})
 
 # --- CONFIGURAZIONE PAGINA ---
 st.set_page_config(page_title="Water Quality DSS", layout="wide", page_icon="💧")
 st.title("💧 Water Quality Assessment System")
 
-# CREAZIONE TAB (SCHEDE)
 tab1, tab2 = st.tabs(["🕵️ Sistema Esperto & Decisionale", "🤖 Machine Learning Lab"])
 
 # ==============================================================================
-# TAB 1: SISTEMA ESPERTO (Logica di main_expert.py + main_expert_gui)
+# TAB 1: SISTEMA ESPERTO
 # ==============================================================================
 with tab1:
     st.markdown("### Modulo Supporto alle Decisioni (DSS)")
@@ -156,7 +134,6 @@ with tab1:
             
             st.subheader("Risultati Analisi")
             
-            # Visualizzazione messaggi regole
             if not engine.msgs:
                 st.success("Nessuna anomalia specifica rilevata dalle regole WHO.")
             else:
@@ -184,48 +161,33 @@ with tab1:
                     st.error("Nessun tecnico disponibile per i vincoli attuali.")
 
 # ==============================================================================
-# TAB 2: MACHINE LEARNING (Logica di main_ml.py)
+# TAB 2: MACHINE LEARNING (OTTIMIZZATO CON CACHE)
 # ==============================================================================
 with tab2:
     st.markdown("### 🤖 Laboratorio Machine Learning")
-    st.markdown("Addestramento modelli sul dataset `water_potability.csv`.")
     
-    if st.button("🚀 Avvia Training e Confronto Modelli", key="train_btn"):
-        with st.spinner("Caricamento dati e addestramento in corso... (potrebbe richiedere qualche secondo)"):
+    # Caricamento Dataset (Cached)
+    data = load_dataset()
+    st.write(f"Dataset caricato: **{len(data.get_data())}** campioni.")
+
+    # Bottone di avvio
+    if st.button("🚀 Esegui Analisi ML", type="primary"):
+        
+        with st.spinner("Addestramento modelli in corso... (la prima volta richiede qualche secondo)"):
+            # Chiamata alla funzione CACHED:
+            # - La prima volta esegue il codice.
+            # - Le volte successive restituisce subito il risultato salvato.
+            results_stats, trained_models = train_and_evaluate_models(data)
             
-            # 1. Caricamento Dati
-            data = water_data()
-            results = []
-            
-            # Lista modelli
-            models_list = [
-                ("Logistic Regression", water_log_reg(data, 0.2)),
-                ("Decision Tree", water_dec_tree(data, 0.2)),
-                ("KNN (k=5)", water_knn(data, 0.2, 5)),
-                ("Naive Bayes", water_naive_bayes(data, 0.2)),
-                ("Neural Network", water_neural_network(data, 0.2))
-            ]
-            
-            # Colonne per i risultati
-            st.write(f"Dataset caricato: **{len(data.get_data())}** campioni.")
-            
-            # Creiamo i grafici per ogni modello
-            for name, model in models_list:
+            # --- Visualizzazione ---
+            for name, model in trained_models:
                 st.markdown(f"#### 🔹 {name}")
                 
-                # Cross Validation veloce (per non bloccare troppo la UI riduciamo i fold se necessario)
-                # Qui usiamo la logica del main_ml.py
-                try:
-                    acc, std = model.evaluate_with_cross_validation(folds=5)
-                    st.write(f"**Accuracy Media (CV):** {acc:.4f} (± {std:.4f})")
-                    results.append({"Model": name, "Accuracy": acc})
-                except Exception as e:
-                    st.error(f"Errore CV: {e}")
-
-                # Training su Split singolo per grafici
-                model.predict()
+                # Recuperiamo le statistiche calcolate
+                stat = next((item for item in results_stats if item["Model"] == name), None)
+                if stat:
+                    st.write(f"**Accuracy Media (CV):** {stat['Accuracy']:.4f} (± {stat['Std']:.4f})")
                 
-                # Grafici in colonne
                 gc1, gc2 = st.columns(2)
                 
                 # Matrice Confusione
@@ -236,7 +198,7 @@ with tab2:
                         fig_cm, ax_cm = plt.subplots()
                         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
                         disp.plot(cmap="Blues", ax=ax_cm)
-                        ax_cm.set_title(f"Confusion Matrix - {name}")
+                        ax_cm.set_title(f"Confusion Matrix")
                         st.pyplot(fig_cm)
                 
                 # ROC Curve
@@ -250,25 +212,21 @@ with tab2:
                         fig_roc, ax_roc = plt.subplots()
                         ax_roc.plot(fpr, tpr, color='darkorange', lw=2, label=f'AUC = {roc_auc:.2f}')
                         ax_roc.plot([0, 1], [0, 1], color='navy', linestyle='--')
-                        ax_roc.set_title(f"ROC Curve - {name}")
+                        ax_roc.set_title(f"ROC Curve")
                         ax_roc.legend(loc="lower right")
                         st.pyplot(fig_roc)
                     else:
                         st.info("ROC Curve non disponibile per questo modello.")
-                
                 st.divider()
 
             # CONFRONTO FINALE
             st.subheader("🏆 Confronto Finale Accuratezza")
-            df_res = pd.DataFrame(results)
+            df_res = pd.DataFrame(results_stats)
             
-            fig_bar, ax_bar = plt.subplots(figsize=(10, 5))
-            sns.barplot(x="Model", y="Accuracy", data=df_res, palette="viridis", ax=ax_bar)
-            ax_bar.set_ylim(0, 1.0)
-            for i, row in df_res.iterrows():
-                ax_bar.text(float(i), row.Accuracy + 0.01, f"{row.Accuracy:.2f}", color='black', ha="center")
-            
-            st.pyplot(fig_bar)
-
-    else:
-        st.info("Clicca il pulsante sopra per avviare la pipeline di Machine Learning.")
+            if not df_res.empty:
+                fig_bar, ax_bar = plt.subplots(figsize=(10, 5))
+                sns.barplot(x="Model", y="Accuracy", data=df_res, palette="viridis", ax=ax_bar)
+                ax_bar.set_ylim(0, 1.0)
+                for i, row in df_res.iterrows():
+                    ax_bar.text(float(i), row.Accuracy + 0.01, f"{row.Accuracy:.2f}", color='black', ha="center")
+                st.pyplot(fig_bar)

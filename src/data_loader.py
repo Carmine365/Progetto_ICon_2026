@@ -2,15 +2,19 @@ from seaborn import heatmap
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import os
 
 # 1. CAMBIO NOME FILE E TARGET
-import os
-WATER_DATA_FILE = os.path.join("data", "water_potability.csv")
+# --- 1. FIX PERCORSO ASSOLUTO ---
+# Calcola il percorso base partendo dalla posizione di QUESTO file (src/)
+# os.path.dirname(...) risale di un livello, alla root del progetto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WATER_DATA_FILE = os.path.join(BASE_DIR, "data", "water_potability.csv")
 TARGET = "Potability" # Nel CSV dell'acqua si chiama così, non "Outcome"
 
 # Consiglio: Rinomina la classe in 'water_data' per coerenza, 
 # ma ricorda di cambiare l'import anche nel main.py!
-class water_data: 
+class waterData: 
 
     def __init__(self):
         # Carica e pulisce i dati (rimuove righe con campi vuoti)

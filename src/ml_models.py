@@ -13,9 +13,9 @@ from typing import Final
 import numpy as np
 
 # Import relativo per il package src
-from .data_loader import water_data 
+from .data_loader import waterData 
 
-class water_model:
+class waterModel:
 
     def __init__(self, model, x, y, scores_dict: dict, test_size: float):
         default_test_size: Final = 0.2
@@ -145,8 +145,8 @@ class water_model:
 
 # --- SOTTOCLASSI ---
 
-class water_log_reg(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterLogReg(waterModel):
+    def __init__(self, data: waterData, test_size: float):
         x, y = data.get_training_data()
         super().__init__(LogisticRegression(max_iter=1000), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
@@ -154,8 +154,8 @@ class water_log_reg(water_model):
     def predict(self):
         self._single_split_fit()
 
-class water_dec_tree(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterDecTree(waterModel):
+    def __init__(self, data: waterData, test_size: float):
         x, y = data.get_training_data()
         super().__init__(tree.DecisionTreeClassifier(max_depth=5), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
@@ -166,8 +166,8 @@ class water_dec_tree(water_model):
         self.y_predicted = self.model.predict(self.x_test)
         self._calculate_scores()
 
-class water_knn(water_model):
-    def __init__(self, data: water_data, test_size: float, neighbors: int):
+class waterKnn(waterModel):
+    def __init__(self, data: waterData, test_size: float, neighbors: int):
         x, y = data.get_training_data()
         super().__init__(KNeighborsClassifier(n_neighbors=neighbors), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
@@ -175,8 +175,8 @@ class water_knn(water_model):
     def predict(self):
         self._single_split_fit()
 
-class water_neural_network(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterNeuralNetwork(waterModel):
+    def __init__(self, data: waterData, test_size: float):
         x, y = data.get_training_data()
         super().__init__(MLPClassifier(hidden_layer_sizes=(64,32), max_iter=1000), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
@@ -184,8 +184,8 @@ class water_neural_network(water_model):
     def predict(self):
         self._single_split_fit()
 
-class water_naive_bayes(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterNaiveBayes(waterModel):
+    def __init__(self, data: waterData, test_size: float):
         x, y = data.get_training_data()
         super().__init__(GaussianNB(), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
