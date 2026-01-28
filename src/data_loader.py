@@ -5,7 +5,7 @@ import numpy as np
 
 # 1. CAMBIO NOME FILE E TARGET
 import os
-DIABETES_DATA_FILE = os.path.join("data", "water_potability.csv")
+WATER_DATA_FILE = os.path.join("data", "water_potability.csv")
 TARGET = "Potability" # Nel CSV dell'acqua si chiama così, non "Outcome"
 
 # Consiglio: Rinomina la classe in 'water_data' per coerenza, 
@@ -14,7 +14,7 @@ class water_data:
 
     def __init__(self):
         # Carica e pulisce i dati (rimuove righe con campi vuoti)
-        self.data = pd.read_csv(DIABETES_DATA_FILE)
+        self.data = pd.read_csv(WATER_DATA_FILE)
         
         # INVECE DI dropna():
         # Sostituiamo i valori mancanti (NaN) con la media della colonna.

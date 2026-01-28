@@ -1,4 +1,4 @@
-from owlready2 import get_ontology, Thing, DataProperty, ConstrainedDatatype
+from owlready2 import get_ontology, Thing, DataProperty, ConstrainedDatatype, Imp
 # In app.py
 from src.ontology_manager import manager as water_ontology 
 # "manager" è l'istanza che hai appena creato in fondo al file
