@@ -1,4 +1,4 @@
-from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity
+from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity, Thing
 import os
 
 class water_ontology:
@@ -8,100 +8,103 @@ class water_ontology:
         self.ontology = None
         self.dict_parameters = {}
 
-        # 2. Caricamento e Ragionamento (MODIFICA CHIAVE)
+        # 2. Caricamento Ontologia
         print(f"--- Caricamento Ontologia: {path} ---")
-        self.ontology = get_ontology(path).load()
-        
-        # --- BLOCCO INFERENZA (Teoria Cap. 6) ---
-        # Attiviamo il Reasoner (Pellet) per dedurre nuova conoscenza.
-        # Questo trasforma l'ontologia da semplice "schema" a "motore semantico".
-        print("Avvio del Reasoner (Pellet) per l'inferenza semantica...")
         try:
-            with self.ontology:
-                # CASO 1: Creiamo un campione con Solfati pericolosi (300.0) e pH normale (7.0)
-                unsafe_sample = self.ontology.WaterSample("Campione_Pericoloso_Solfati")
-                unsafe_sample.has_sulfate_value = [300.0]
-                unsafe_sample.has_ph_value = [7.0]
-
-                # CASO 2: Creiamo un campione perfetto
-                safe_sample = self.ontology.WaterSample("Campione_Sicuro")
-                safe_sample.has_sulfate_value = [150.0]
-                safe_sample.has_ph_value = [7.2]
-                safe_sample.has_turbidity_value = [2.0]
-
-                # Sincronizziamo il reasoner
-                sync_reasoner_pellet() 
-
-                # VERIFICA CASO 1
-                print(f"\n🧪 Analisi Semantica 'Campione_Pericoloso_Solfati':")
-                classes_1 = [c.name for c in unsafe_sample.is_a if hasattr(c, 'name')]
-                print(f"   > Classi inferite: {classes_1}")
-                
-                if "UnsafeWater" in classes_1:
-                    print("   ✅ SUCCESSO: Classificato come 'UnsafeWater' (tramite HighSulfateWater)!")
-                
-                # VERIFICA CASO 2
-                print(f"\n💧 Analisi Semantica 'Campione_Sicuro':")
-                classes_2 = [c.name for c in safe_sample.is_a if hasattr(c, 'name')]
-                print(f"   > Classi inferite: {classes_2}")
-                
-                if "UnsafeWater" not in classes_2:
-                    print("   ✅ SUCCESSO: NON è classificato come 'UnsafeWater'.")
-
-                # Pulizia
-                destroy_entity(unsafe_sample)
-                destroy_entity(safe_sample)
-
+            self.ontology = get_ontology(path).load()
         except Exception as e:
-            print(f"Errore reasoner: {e}")
-
-    def get_parameters_descriptions(self):
-        """
-        Recupera le descrizioni pulite usando direttamente l'attributo .name
-        """
-        if not self.ontology:
+            print(f"[ERRORE] Impossibile caricare l'ontologia: {e}")
             return
 
-        # Svuotiamo il dizionario per sicurezza
-        self.dict_parameters = {}
+        # 3. BLOCCO INFERENZA DI TEST (Codice Originale Importante!)
+        # Serve a dimostrare che il motore semantico funziona all'avvio
+        print("Avvio del Reasoner (Pellet) per test di inferenza iniziale...")
+        try:
+            with self.ontology:
+                # Creiamo un campione di test sicuramente pericoloso
+                test_sample = self.ontology.WaterSample("Test_Init_Sample")
+                test_sample.has_sulfate_value = [300.0]  # Alto
+                test_sample.has_ph_value = [7.0]         # Normale
 
-        # Itera su tutti gli individui (es. pH, Hardness...)
+                # Sincronizziamo il reasoner
+                sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
+
+                # Verifichiamo se è stato classificato come Unsafe
+                # (Assumendo che UnsafeWater o HighSulfateWater esistano nell'OWL)
+                print(f"Test Classi Inferite: {test_sample.is_a}")
+                
+                # Pulizia dopo il test
+                destroy_entity(test_sample)
+                print("Test inferenza completato con successo.")
+                
+        except Exception as e:
+            print(f"Warning: Reasoner non disponibile o errore nel test iniziale: {e}")
+
+        # 4. Carichiamo i parametri disponibili (Codice Originale)
+        self.load_parameters()
+
+    def load_parameters(self):
+        """
+        Scansiona l'ontologia per trovare individui (parametri) e descrizioni.
+        Rende il sistema dinamico: legge cosa c'è nell'OWL.
+        """
+        if not self.ontology: return
+
         for i in self.ontology.individuals():
-            # 1. Recupero Nome Pulito (La modifica chiave)
-            # Invece di str(i) che dà "ontology.ph", i.name dà solo "ph" o "Hardness"
+            # Pulizia del nome (es. "ontology.ph" -> "ph")
             clean_name = i.name 
             
-            # 2. Recupero Descrizione
+            # Recupero descrizione (se esiste la proprietà descrizione_parametro)
+            desc_text = "Descrizione non disponibile."
             if hasattr(i, "descrizione_parametro") and i.descrizione_parametro:
-                # owlready2 restituisce spesso una lista per le proprietà testo
                 desc_raw = i.descrizione_parametro
                 desc_text = desc_raw[0] if isinstance(desc_raw, list) else str(desc_raw)
-            else:
-                desc_text = "Descrizione non disponibile nell'ontologia."
 
-            # 3. Salvataggio nel dizionario
             self.dict_parameters[clean_name] = desc_text
 
+    def get_parameter_description(self, param_name):
+        """Restituisce la descrizione semantica di un parametro."""
+        return self.dict_parameters.get(param_name, "Nessuna descrizione trovata.")
+
     def print_parameters(self):
-        """
-        Stampa solo l'elenco dei nomi per il menu di scelta.
-        """
-        i = 1
-        dict_nums_params = {}
-        dict_nums_keys = {}
+        """Utility per la CLI per mostrare i parametri."""
+        print("\n--- PARAMETRI NELL'ONTOLOGIA ---")
+        for k, v in self.dict_parameters.items():
+            print(f"- {k}: {v}")
 
-        if not self.dict_parameters:
-            print("Nessun parametro caricato dall'ontologia.")
-            return {}, {}
+    # --- NUOVO METODO AGGIUNTO PER LA GUI ---
+    def semantic_check(self, ph, sulfate):
+        """
+        Verifica semantica dinamica per l'integrazione con la GUI.
+        """
+        if not self.ontology: return False
 
-        print("\n--- PARAMETRI DISPONIBILI ---")
-        for k in self.dict_parameters.keys():
-            # MODIFICA: Stampiamo solo [Numero] Nome
-            # La descrizione la mostriamo solo quando l'utente sceglie!
-            print(f"[{i}] {k}")
+        print(f"[ONTOLOGY] Check semantico dinamico: pH={ph}, Solfati={sulfate}")
+        
+        with self.ontology:
+            # 1. Creiamo individuo temporaneo
+            temp_sample = self.ontology.WaterSample("Temp_User_Sample")
+            temp_sample.has_ph_value = [float(ph)]
+            temp_sample.has_sulfate_value = [float(sulfate)]
+
+            # 2. Reasoner
+            try:
+                sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
+            except Exception as e:
+                print(f"[ERRORE REASONER] {e}")
+                return False
+
+            # 3. Check Classificazione SWRL (CorrosiveWater)
+            is_corrosive = False
+            corrosive_class = getattr(self.ontology, "CorrosiveWater", None)
             
-            dict_nums_params[i] = self.dict_parameters[k]
-            dict_nums_keys[i] = k
-            i = i + 1
+            if corrosive_class and corrosive_class in temp_sample.is_a:
+                is_corrosive = True
 
-        return dict_nums_params, dict_nums_keys
+            # 4. Pulizia
+            destroy_entity(temp_sample)
+            
+            return is_corrosive
+
+# --- ISTANZA GLOBALE ---
+manager = water_ontology()

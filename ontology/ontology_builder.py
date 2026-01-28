@@ -1,4 +1,7 @@
 from owlready2 import get_ontology, Thing, DataProperty, ConstrainedDatatype
+# In app.py
+from src.ontology_manager import manager as water_ontology 
+# "manager" è l'istanza che hai appena creato in fondo al file
 
 # 1. Crea l'ontologia
 onto = get_ontology("http://test.org/water_quality.owl")
@@ -33,6 +36,17 @@ with onto:
     class has_turbidity_value(DataProperty):
         domain = [WaterSample]
         range = [float]
+
+    # --- REGOLA SWRL ---
+        # "Se un campione ha pH < 6.0 E Solfati > 200.0, allora è CorrosiveWater"
+        # Nota: swrlb:lessThan e swrlb:greaterThan sono built-in
+        rule = Imp()
+        rule.set_as_rule("""
+            WaterSample(?w), 
+            has_ph_value(?w, ?p), swrlb:lessThan(?p, 6.0), 
+            has_sulfate_value(?w, ?s), swrlb:greaterThan(?s, 200.0) 
+            -> CorrosiveWater(?w)
+        """)
 
     # --- 3. CLASSI DEFINITE (Il "Motore Logico") ---
     # Classe A: Acqua Acida (pH < 6.5)
