@@ -1441,7 +1441,22 @@ Metriche aggiuntive non vengono introdotte in questa valutazione comparativa per
 ## 6.6 Valutazione sperimentale rigorosa
 
 Per garantire la robustezza dei risultati ed evitare bias dovuti a una singola partizione dei dati, è stato adottato un protocollo di validazione basato su **10-fold cross-validation**.  
-L’obiettivo è ottenere una stima più affidabile delle prestazioni medie e della loro stabilità, riportando **media ± deviazione standard**.
+L’obiettivo è ottenere una stima più affidabile delle prestazioni medie e della loro stabilità, riportando **media ± deviazione standard**. Per l’analisi qualitativa dettagliata 
+è stato selezionato il modello con il miglior bilanciamento tra le classi.
+Gli altri modelli, pur mostrando valori di accuracy comparabili o superiori,
+presentano comportamenti fortemente sbilanciati verso la classe maggioritaria
+e non forniscono informazioni aggiuntive significative.
+
+![Confusion Matrix - Neural Network (MLP)](images/mlpMatrix.png)
+
+*Questo grafico mostra il comportamento del modello migliore in termini di falsi positivi e falsi negativi*
+
+![ROC Curve - Neural Network (MLP)](images/mlpRoc.png)
+
+*Nonostante un’accuracy inferiore rispetto ad altri modelli, la rete neurale
+mostra una migliore capacità di separazione tra le classi, come evidenziato
+dall’andamento della curva ROC, meno influenzata dallo sbilanciamento del dataset.*
+
 
 ### 6.6.1 Risultati della Cross-Validation (mean ± std)
 
@@ -1462,6 +1477,17 @@ La deviazione standard ($\sigma$) è importante per valutare la stabilità del m
 
 Nel progetto possono essere presenti anche valutazioni su un singolo split train/test (ad es. matrice di confusione o classification report), ma queste sono da considerarsi **solo illustrative**.  
 Per il confronto tra modelli in questa documentazione si usano esclusivamente risultati **mediati in cross-validation** (mean ± std), in linea con le linee guida dell’insegnamento.
+
+![Confronto Accuratezza Modelli](images/confrontoModelli.png)
+
+*Nel confronto tra tutti i modelli presente nel grafico, si osserva come Decision Tree e Naive Bayes ottengano valori di accuracy leggermente superiori, ma come mostrato dalle confusion matrix, tali risultati sono influenzati dallo sbilanciamento del dataset e non riflettono una reale capacità discriminativa.*
+
+
+![Esecuzione da terminale di main_ml.py](images/main_mlTerminal.png)
+
+*Qui sono riportate le principali fasi della pipeline di apprendimento automatico:
+caricamento del dataset, valutazione tramite cross-validation (10-fold) e
+generazione dei grafici di valutazione sul test set.*
 
 ---
 
