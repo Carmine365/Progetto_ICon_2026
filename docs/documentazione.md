@@ -597,6 +597,11 @@ Il KBS è il componente che realizza la parte **simbolica e spiegabile** del sis
 
 Nota di coerenza col codice: nel progetto attuale l’attivazione “physical” è legata a specifici fatti (non a torbidità/solidi in modo diretto); questa parte è discussa nei limiti del KBS.
 
+![Avvio del sistema esperto](images/main_expertTerminal1.png)
+
+*Avvio del sistema esperto rule-based dove vengono caricati l’ontologia OWL e il motore inferenziale, 
+e viene presentato il menu interattivo per l’analisi dei campioni.*
+
 
 ---
 
@@ -711,7 +716,8 @@ Questa regola è significativa perché mostra un ragionamento **multi-parametro*
 
 ## 3.5 Integrazione tra KBS e CSP (Diagnosi → Azione)
 
-Il KBS funge da "cervello" che identifica il problema, delegando la risoluzione operativa (pianificazione dei test di laboratorio) al modulo CSP (`src/scheduler.py`).
+Il KBS funge da "cervello" che identifica il problema, delegando la risoluzione
+operativa (pianificazione dei test di laboratorio) al modulo CSP (`src/scheduler.py`).
 
 ### 3.5.1 Regole di attivazione dello scheduler
 
@@ -721,7 +727,18 @@ Il sistema mappa le anomalie rilevate su specifiche tipologie di intervento:
 * **Physical**: attivato quando vengono rilevate anomalie fisiche strumentali (es. `problema_torbidita`, `problema_solidi`).
 * **Critical**: attivato quando scatta la regola relazionale di rischio elevato (pH < 6.0 **AND** Solfati > 200).
 
-Questa architettura realizza una separazione netta tra **diagnosi simbolica** e **pianificazione a vincoli**.
+Questa architettura realizza una separazione netta tra **diagnosi simbolica**
+e **pianificazione a vincoli**.
+
+È importante notare che il concetto di *criticità* è distinto dalla sola potabilità:
+il sistema può individuare condizioni di rischio operativo (ad esempio rischio di
+corrosione delle infrastrutture) anche quando il campione non viola direttamente
+tutte le soglie di potabilità.
+
+![Caso critico e attivazione del CSP](images/main_expertTerminal3.png)
+
+*Caso critico rilevato dal sistema esperto, la combinazione di pH acido (5.8) e alta concentrazione di solfati (300 mg/L)
+attiva una regola relazionale di rischio corrosione e invoca il modulo CSP per la pianificazione dell’intervento operativo.*
 
 ---
 
@@ -733,6 +750,11 @@ La regola `final_report` chiude l'analisi quando viene rilevato `Fact(fine_anali
 * **Esito Positivo (Anomalia)**: Viene riportato il numero totale di violazioni dei parametri.
 
 La decisione finale è **deterministica, spiegabile e tracciabile**, poiché ogni anomalia è legata a un fatto specifico inserito nella Working Memory.
+
+![Output del sistema esperto – caso normale](images/main_expert_normal_output.png)
+
+*Output finale del sistema esperto in un caso normale senza anomalie. Tutti i parametri analizzati rientrano nei range di sicurezza e il sistema
+conclude per la potabilità del campione, senza attivare interventi operativi.*
 
 ---
 
