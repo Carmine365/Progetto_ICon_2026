@@ -102,8 +102,6 @@ Strato semantico che modella formalmente il dominio (campione d’acqua, paramet
   * prova ad attivare il reasoner con `sync_reasoner_pellet()` (con **fallback** se non disponibile);
   * esegue un controllo semantico **opzionale** focalizzato su `CorrosiveWater` (solo se il reasoner è attivo).
 
----
-
 ### 4. Modulo CSP Scheduler (Pianificazione a Vincoli)
 
 Modulo operativo che traduce la diagnosi simbolica in una decisione di pianificazione, risolvendo un problema di assegnazione come CSP.
@@ -113,8 +111,6 @@ Modulo operativo che traduce la diagnosi simbolica in una decisione di pianifica
   * filtra a priori il dominio dello **staff** in base alla tipologia di problema;
   * applica vincoli di disponibilità/turnazione e compatibilità;
   * restituisce una soluzione valida al KBS, che la presenta come suggerimento operativo.
-
----
 
 ### 5. Interfaccia Streamlit + Modello Bayesiano
 
@@ -172,9 +168,16 @@ python main_expert.py
 
 ```
 
-*Seguire le istruzioni a schermo per navigare nel menu.*
+### Modalità 3: Web App Streamlit (UI + Bayesian Model)
+
+Avvia un’interfaccia web (Streamlit) per usare il progetto in modo interattivo, senza passare dalla CLI.
+Questa modalità è pensata come “front-end”  per inserire o selezionare parametri di un campione d’acqua, mostrando una valutazione/indicatori basati sul **modello bayesiano**
+
+```bash
+streamlit run app.py
+
+```
 
 ---
-
 
 *Powered by Python, Scikit-Learn, Experta & Owlready2.*
