@@ -1,7 +1,138 @@
 # Water Quality Assessment System   
 ## Sistema ibrido: Ontologia + KBS rule-based + ML + CSP
 
-# 0. Mappa del progetto (contenuti dello ZIP) e temi affrontati
+## Indice
+
+- [0. Mappa del progetto e temi affrontati](#0-mappa-del-progetto-e-temi-affrontati)
+  - [0.1 Contenuto, struttura e file principali](#01-contenuto-struttura-e-file-principali)
+  - [0.2 Temi del corso coperti](#02-temi-del-corso-coperti)
+  - [0.3 Cosa verrà documentato e cosa viene evitato](#03-cosa-verrà-documentato-e-cosa-viene-evitato)
+  - [0.4 Modalità di esecuzione (entrypoint principali)](#04-modalità-di-esecuzione-entrypoint-principali)
+
+- [1. Obiettivo del progetto e motivazioni](#1-obiettivo-del-progetto-e-motivazioni)
+  - [1.1 Contesto e scopo pratico](#11-contesto-e-scopo-pratico)
+  - [1.2 Temi del corso affrontati esplicitamente](#12-temi-del-corso-affrontati-esplicitamente)
+  - [1.3 Perché un sistema ibrido (KBS + Ontologia + ML + CSP)](#13-perché-un-sistema-ibrido-kbs--ontologia--ml--csp)
+    - [1.3.1 Perché non solo ML](#131-perché-non-solo-ml)
+    - [1.3.2 Perché un KBS rule-based](#132-perché-un-kbs-rule-based)
+    - [1.3.3 Perché un’ontologia OWL](#133-perché-unontologia-owl)
+    - [1.3.4 Perché un CSP per l’azione operativa](#134-perché-un-csp-per-lazione-operativa)
+  - [1.4 Risultati attesi e output del sistema](#14-risultati-attesi-e-output-del-sistema)
+  - [1.5 Criteri di qualità adottati (in linea con le linee guida)](#15-criteri-di-qualità-adottati-in-linea-con-le-linee-guida)
+  - [1.6 Come verrà sviluppata la documentazione (passo passo)](#16-come-verrà-sviluppata-la-documentazione-passo-passo)
+
+- [2. Architettura del sistema e scelte progettuali](#2-architettura-del-sistema-e-scelte-progettuali)
+  - [2.1 Visione architetturale generale](#21-visione-architetturale-generale)
+  - [2.2 Modulo KBS: cuore del sistema](#22-modulo-kbs-cuore-del-sistema)
+    - [2.2.1 File e responsabilità](#221-file-e-responsabilità)
+    - [2.2.2 Scelta di un motore a regole (experta)](#222-scelta-di-un-motore-a-regole-experta)
+  - [2.3 Strato semantico: Ontologia OWL](#23-strato-semantico-ontologia-owl)
+    - [2.3.1 File e responsabilità](#231-file-e-responsabilità)
+    - [2.3.2 Integrazione con il sistema](#232-integrazione-con-il-sistema)
+  - [2.4 Modulo CSP / Scheduler](#24-modulo-csp--scheduler)
+    - [2.4.1 File e responsabilità](#241-file-e-responsabilità)
+    - [2.4.2 Interazione con il KBS](#242-interazione-con-il-kbs)
+    - [2.4.3 Motivazione della scelta CSP](#243-motivazione-della-scelta-csp)
+  - [2.5 Modulo di apprendimento automatico (ML)](#25-modulo-di-apprendimento-automatico-ml)
+    - [2.5.1 File e responsabilità](#251-file-e-responsabilità)
+    - [2.5.2 Motivazione della separazione dal KBS](#252-motivazione-della-separazione-dal-kbs)
+  - [2.6 Flusso di esecuzione complessivo](#26-flusso-di-esecuzione-complessivo)
+    - [2.6.1 Flusso KBS + CSP](#261-flusso-kbs--csp)
+    - [2.6.2 Flusso ML](#262-flusso-ml)
+  - [2.7 Vantaggi dell’architettura adottata](#27-vantaggi-dellarchitettura-adottata)
+
+- [3. Knowledge-Based System (KBS) e Knowledge Base](#3-knowledge-based-system-kbs-e-knowledge-base)
+  - [3.1 Ruolo del KBS nel sistema](#31-ruolo-del-kbs-nel-sistema)
+  - [3.2 Scelte di implementazione e motivazioni](#32-scelte-di-implementazione-e-motivazioni)
+    - [3.2.1 Motore a regole: experta](#321-motore-a-regole-experta)
+    - [3.2.2 Compatibilità Python (fix per experta)](#322-compatibilità-python-fix-per-experta)
+  - [3.3 Acquisizione della conoscenza e popolamento della Knowledge Base](#33-acquisizione-della-conoscenza-e-popolamento-della-knowledge-base)
+    - [3.3.1 Inizializzazione della KB](#331-inizializzazione-della-kb)
+    - [3.3.2 Acquisizione delle osservazioni qualitative](#332-acquisizione-delle-osservazioni-qualitative)
+    - [3.3.3 Acquisizione dei parametri numerici](#333-acquisizione-dei-parametri-numerici)
+  - [3.4 Regole di inferenza e catene decisionali](#34-regole-di-inferenza-e-catene-decisionali)
+    - [3.4.1 Regole di controllo del flusso](#341-regole-di-controllo-del-flusso)
+    - [3.4.2 Regola relazionale: Rischio Corrosione](#342-regola-relazionale-rischio-corrosione)
+  - [3.5 Integrazione tra KBS e CSP (Diagnosi → Azione)](#35-integrazione-tra-kbs-e-csp-diagnosi--azione)
+    - [3.5.1 Regole di attivazione dello scheduler](#351-regole-di-attivazione-dello-scheduler)
+  - [3.6 Output finale del sistema esperto](#36-output-finale-del-sistema-esperto)
+  - [3.7 Complessità, robustezza ed estendibilità](#37-complessità-robustezza-ed-estendibilità)
+  - [3.8 Limiti del KBS e possibili miglioramenti](#38-limiti-del-kbs-e-possibili-miglioramenti)
+
+- [4. Ontologia OWL: supporto semantico e inferenza opzionale](#4-ontologia-owl-supporto-semantico-e-inferenza-opzionale)
+  - [4.1 Ruolo dell’ontologia: modello concettuale e classificazione semantica](#41-ruolo-dellontologia-modello-concettuale-e-classificazione-semantica)
+  - [4.2 Struttura Avanzata dell’ontologia](#42-struttura-avanzata-dellontologia)
+    - [4.2.1 Data Properties](#421-data-properties)
+    - [4.2.2 Classi Definite (Defined Classes)](#422-classi-definite-defined-classes)
+  - [4.3 Implementazione e Costruzione Programmatica](#43-implementazione-e-costruzione-programmatica)
+    - [4.3.1 ontology_builder.py](#431-ontology_builderpy)
+    - [4.3.2 ontology_manager.py](#432-ontology_managerpy)
+  - [4.4 Inferenza con Reasoner (Pellet)](#44-inferenza-con-reasoner-pellet)
+    - [4.4.1 Attivazione del reasoner OWL](#441-attivazione-del-reasoner-owl)
+    - [4.4.2 Gestione del fallback](#442-gestione-del-fallback)
+  - [4.5 Integrazione tra ontologia e KBS](#45-integrazione-tra-ontologia-e-kbs)
+  - [4.6 Complessità e valutazione dell’approccio ontologico](#46-complessità-e-valutazione-dellapproccio-ontologico)
+    - [4.6.1 Complessità computazionale](#461-complessità-computazionale)
+    - [4.6.2 Adeguatezza rispetto agli obiettivi](#462-adeguatezza-rispetto-agli-obiettivi)
+  - [4.7 Limiti dell’ontologia e possibili estensioni](#47-limiti-dellontologia-e-possibili-estensioni)
+    - [4.7.1 Limiti attuali](#471-limiti-attuali)
+    - [4.7.2 Estensioni possibili](#472-estensioni-possibili)
+  - [4.8 Considerazioni finali sullo strato ontologico](#48-considerazioni-finali-sullo-strato-ontologico)
+
+- [5. Constraint Satisfaction Problem (CSP) e Scheduler](#5-constraint-satisfaction-problem-csp-e-scheduler)
+  - [5.1 Ruolo del CSP nel sistema complessivo](#51-ruolo-del-csp-nel-sistema-complessivo)
+  - [5.2 Definizione Formale del Problema <X, D, C>](#52-definizione-formale-del-problema-x-d-c)
+    - [5.2.1 Variabili (X)](#521-variabili-x)
+    - [5.2.2 Domini (D)](#522-domini-d)
+    - [5.2.3 Vincoli (C)](#523-vincoli-c)
+  - [5.3 File e integrazione con il KBS](#53-file-e-integrazione-con-il-kbs)
+    - [5.3.1 File di riferimento](#531-file-di-riferimento)
+  - [5.4 Modellazione del CSP](#54-modellazione-del-csp)
+    - [5.4.1 Variabili del CSP](#541-variabili-del-csp)
+    - [5.4.2 Domini delle variabili](#542-domini-delle-variabili)
+    - [5.4.3 Vincoli del CSP](#543-vincoli-del-csp)
+  - [5.5 Risoluzione del CSP](#55-risoluzione-del-csp)
+  - [5.6 Integrazione diagnosi → pianificazione](#56-integrazione-diagnosi--pianificazione)
+    - [5.6.1 Flusso completo](#561-flusso-completo)
+  - [5.7 Scelte progettuali e alternative scartate](#57-scelte-progettuali-e-alternative-scartate)
+    - [5.7.1 Perché un CSP e non codice procedurale](#571-perché-un-csp-e-non-codice-procedurale)
+    - [5.7.2 Perché un CSP semplice](#572-perché-un-csp-semplice)
+  - [5.8 Complessità computazionale e Spazio degli Stati](#58-complessità-computazionale-e-spazio-degli-stati)
+  - [5.9 Libreria utilizzata](#59-libreria-utilizzata)
+  - [5.10 Estensioni possibili](#510-estensioni-possibili)
+  - [5.11 Considerazioni finali sul modulo CSP](#511-considerazioni-finali-sul-modulo-csp)
+
+- [6. Apprendimento Automatico (ML): modelli, parametri e valutazione](#6-apprendimento-automatico-ml-modelli-parametri-e-valutazione)
+  - [6.1 Ruolo del modulo ML nel progetto](#61-ruolo-del-modulo-ml-nel-progetto)
+  - [6.2 Dataset utilizzato](#62-dataset-utilizzato)
+    - [6.2.1 Descrizione del dataset](#621-descrizione-del-dataset)
+    - [6.2.2 Preprocessing dei dati](#622-preprocessing-dei-dati)
+  - [6.3 Modelli implementati](#63-modelli-implementati)
+    - [6.3.1 Logistic Regression](#631-logistic-regression)
+    - [6.3.2 Decision Tree](#632-decision-tree)
+    - [6.3.3 K-Nearest Neighbors (KNN)](#633-k-nearest-neighbors-knn)
+    - [6.3.4 Multi-Layer Perceptron (MLP)](#634-multi-layer-perceptron-mlp)
+    - [6.3.5 Gaussian Naive Bayes](#635-gaussian-naive-bayes)
+  - [6.4 Scelte sugli iperparametri](#64-scelte-sugli-iperparametri)
+  - [6.5 Protocollo di valutazione (punto cruciale)](#65-protocollo-di-valutazione-punto-cruciale)
+    - [6.5.1 Motivazione del protocollo](#651-motivazione-del-protocollo)
+    - [6.5.2 Cross-Validation](#652-cross-validation)
+    - [6.5.3 Metriche utilizzate](#653-metriche-utilizzate)
+  - [6.6 Valutazione sperimentale rigorosa](#66-valutazione-sperimentale-rigorosa)
+    - [6.6.1 Risultati della Cross-Validation (mean ± std)](#661-risultati-della-cross-validation-mean--std)
+    - [6.6.2 Nota su valutazioni “single split”](#662-nota-su-valutazioni-single-split)
+  - [6.7 Analisi critica: ML vs approccio simbolico (KBS)](#67-analisi-critica-ml-vs-approccio-simbolico-kbs)
+  - [6.8 Confronto concettuale KBS vs ML](#68-confronto-concettuale-kbs-vs-ml)
+  - [6.9 Limiti e possibili estensioni del modulo ML](#69-limiti-e-possibili-estensioni-del-modulo-ml)
+    - [6.9.1 Limiti](#691-limiti)
+    - [6.9.2 Estensioni possibili](#692-estensioni-possibili)
+  - [6.10 Considerazioni finali sul modulo ML](#610-considerazioni-finali-sul-modulo-ml)
+
+- [7. Conclusioni](#7-conclusioni)
+
+---
+
+# 0. Mappa del progetto  e temi affrontati
 
 Questa sezione serve a chiarire **cosa contiene realmente il progetto** e **quali temi del corso vengono affrontati esplicitamente**, così da rendere subito valutabile il lavoro senza “riempitivi”.
 
@@ -15,49 +146,53 @@ Nel progetto sono presenti quattro macro-componenti, ciascuna implementata in mo
 - **File principale**: `src/expert_system.py`  
   Contiene:
   - definizione e uso dei **fatti** (`Fact(...)`)
-  - definizione delle **regole** con `experta` (trigger su osservazioni e su vincoli numerici)
-  - gestione dell’esecuzione del ragionamento e produzione dell’esito
-  - integrazione con lo scheduler (CSP) tramite chiamate come `_run_scheduler(...)`
+  - definizione delle **regole** con `experta`
+  - gestione del flusso a step (`Fact(step="...")`) per l’acquisizione guidata
+  - generazione di fatti di anomalia e di decisione (`need_lab`, `problem_type`)
+  - invocazione del modulo CSP tramite `_run_scheduler(issue_type)` quando viene inferito `Fact(need_lab=...)` oppure in caso critico
 
 - **Entrypoint**: `main_expert.py`  
-  Avvia l’esecuzione del sistema esperto (interazione/diagnosi).
+  Avvia l’esecuzione interattiva del sistema esperto.
 
 ---
 
 ### Ontologia OWL e gestione semantica
 - **Ontologia**: `ontology/water_quality.owl`  
-  File OWL con classi/proprietà/individui relativi al dominio (parametri dell’acqua e concetti collegati).
+  File OWL con classi e data properties (tra cui `AcidicWater`, `HighSulfateWater`, `TurbidWater`, `UnsafeWater` e `CorrosiveWater`).
 
 - **Costruzione/gestione**:
-  - `ontology/ontology_builder.py` (supporto alla costruzione o modifica dell’ontologia)
-  - `src/ontology_manager.py` (caricamento ontologia e utilizzo nel sistema)
-  
-  In particolare `ontology_manager.py` tenta di abilitare il **ragionamento** tramite reasoner (Pellet) e gestisce un comportamento di **fallback** se il reasoner non è disponibile.
+  - `ontology/ontology_builder.py` (costruzione/estensione programmatica dell’ontologia)
+  - `src/ontology_manager.py` (caricamento + uso nel sistema)
+
+Nel codice attuale, `ontology_manager.py` viene usato soprattutto per:
+- recuperare **descrizioni** dei parametri (`get_parameter_description`)
+- eseguire un controllo semantico **opzionale** (`semantic_check`) focalizzato sulla classe `CorrosiveWater` (se il reasoner Pellet è disponibile).
 
 ---
 
 ### CSP / Scheduler (pianificazione risorse)
 - **File principale**: `src/scheduler.py`  
-  Modella un problema di assegnazione (turni/risorse/laboratori) come **CSP**, risolvendo la scelta operativa a partire dal tipo di problema rilevato dal KBS (chimico / fisico / critico).
+  Modella un problema di assegnazione come **CSP**, producendo una scelta del tipo **(staff, day, shift)** in base a `issue_type` (`chemical`, `physical`, `critical`).
 
-Lo scheduler non è “incollato” dentro le regole: è un modulo separato richiamato dal KBS, per mantenere distinta la parte di diagnosi da quella di pianificazione.
+Il CSP filtra il dominio del personale in base al tipo di problema e applica vincoli di disponibilità/turnazione (es. alcune risorse non lavorano in certi giorni/turni e alcune tipologie sono ammesse solo in specifiche fasce).
 
 ---
 
 ### Modulo ML (apprendimento supervisionato)
 - **Dataset**: `data/water_potability.csv`  
-  Dataset tabellare con target di potabilità (colonna `Potability`).
+  Dataset tabellare con target di potabilità (`Potability`).
 
 - **Modelli e valutazione**:
-  - `src/ml_models.py` (addestramento e confronto di più modelli; include cross-validation con mean/std)
-  - `src/ml_evaluation.py` (supporto valutazione/plot o funzioni di utilità, a seconda dell’implementazione)
+  - `src/ml_models.py` (definizione modelli + cross-validation con mean/std; calcola anche precision/recall/f1)
+  - `main_ml.py` (esecuzione: cross-validation + metriche su singolo split + confusion matrix + ROC + grafico confronto)
 
 - **Entrypoint**: `main_ml.py`  
-  Avvia pipeline di training/valutazione dei modelli ML.
+  Avvia la pipeline di training/valutazione.
+
 
 ---
 
-## 0.2 Temi del corso coperti (espliciti nel codice)
+## 0.2 Temi del corso coperti 
 
 Il progetto non è centrato su un solo paradigma: integra più temi del corso, ciascuno identificabile in file concreti.
 
@@ -441,22 +576,27 @@ Moduli collegati:
 
 ## 3.1 Ruolo del KBS nel sistema
 
-Il KBS è il componente che realizza la parte **simbolica e spiegabile** della diagnosi. In particolare:
+Il KBS è il componente che realizza la parte **simbolica e spiegabile** del sistema. In particolare:
 
-1. **Acquisisce** informazioni dall’utente:
-   - osservazioni qualitative (aspetto/odore/sapore/sedimenti)
-   - misure quantitative (pH, solfati, torbidità, solidi, durezza)
+1. **Acquisisce** informazioni dall’utente in modo guidato:
+   - osservazioni qualitative (torbidità visiva, odore, sapore);
+   - misure quantitative inserite in sequenza (tra cui: `ph`, `sulfate`, `turbidity`, `solids`, `hardness`, `chloramines`, `conductivity`, `organic_carbon`, `trihalomethanes`).
 
-2. **Popola** la KB con fatti strutturati.
+2. **Popola** la Working Memory con:
+   - fatti simbolici (`Fact(osservazione_...="si")`);
+   - fatti numerici uniformi (`Fact(param="...", value=...)`);
+   - fatti di anomalia quando vengono violate soglie operative (es. `Fact(problema_solfati="alto")`, ecc.).
 
-3. **Inferisce**:
-   - anomalie su singoli parametri (soglie)
-   - condizioni critiche derivanti da combinazioni (regole relazionali)
-   - tipo di intervento richiesto (chimico/fisico/critico)
+3. **Inferisce** decisioni operative tramite regole:
+   - per i casi **chimici** viene inferito `Fact(need_lab="chemical")` quando sono presenti anomalie chimiche (pH, solfati, cloramine, THM, ecc.);
+   - per i casi **critici** viene inferito `Fact(problem_type="critical")` tramite regola relazionale (pH basso + solfati alti).
 
-4. **Attiva un’azione operativa** chiamando il CSP (prenotazione/assegnazione turno) quando rileva un problema.
+4. **Attiva l’azione operativa (CSP)**:
+   - quando compare `Fact(need_lab="chemical" | "physical")` viene chiamato `_run_scheduler(issue_type)`;
+   - in caso `Fact(problem_type="critical")` viene chiamato direttamente lo scheduler in modalità `"critical"`.
 
-L’obiettivo non è “fare una predizione”, ma produrre un output ragionato e motivabile, e collegarlo a un’azione.
+Nota di coerenza col codice: nel progetto attuale l’attivazione “physical” è legata a specifici fatti (non a torbidità/solidi in modo diretto); questa parte è discussa nei limiti del KBS.
+
 
 ---
 
@@ -483,9 +623,6 @@ if not hasattr(collections, 'Mapping'):
     collections.Mapping = collections.abc.Mapping
 ```
 
-Ottimo lavoro. Il testo è solido, tecnico e mostra una consapevolezza critica (specialmente sui bug del codice come il fatto `action="analyze"`) che alzerà notevolmente la qualità della relazione.
-
-Ecco il contenuto riorganizzato e formattato con una struttura Markdown pulita, pronta per essere incollata nel tuo documento finale.
 
 ---
 
@@ -495,42 +632,58 @@ L’acquisizione della conoscenza nel KBS avviene in modo **interattivo** e **gu
 
 ### 3.3.1 Inizializzazione della KB
 
-All’avvio del motore (`@DefFacts()`), il sistema prepara il contesto operativo inizializzando:
+All’avvio del motore, il sistema prepara il contesto operativo inizializzando:
 
-* **Fatto di bootstrap**: `Fact(inizio="si")`, che innesca la prima regola di saluto e configurazione.
-* **Contatore anomalie**: `self.problems_found = 0`, utilizzato per la valutazione finale della potabilità.
-* **Medie statistiche**: `self.mean_water_values`, calcolate dinamicamente dal dataset reale tramite `water_data().get_medium_values_water()`.
+* **Fatto di bootstrap**: `Fact(inizio="si")`, che innesca la prima regola di avvio e la sequenza di acquisizione.
+* **Contatore anomalie**: `self.problems_count = 0`, usato per contare le anomalie rilevate durante l’analisi.
+* **Stato per suggerimento operativo (CSP)**: `self.csp_suggestion = None`, aggiornato dalle regole di inferenza dell’intervento (chemical/physical/critical).
+
+Nella versione **CLI** viene inoltre caricato un dizionario di **medie statistiche** dal dataset tramite
+`waterData().get_medium_values_water()` (`self.mean_water_values`), utile come supporto informativo e base per possibili estensioni, ma non necessario al funzionamento core del KBS.
 
 ### 3.3.2 Acquisizione delle osservazioni qualitative
 
-Le osservazioni (aspetto, odore, sapore, sedimenti) vengono acquisite tramite la funzione `_prototype_ask_observation()`. Per ogni risposta affermativa, viene asserito un fatto simbolico:
+Le osservazioni qualitative vengono acquisite nella prima fase interattiva tramite una regola dedicata del KBS (`ask_observations`), attivata dal fatto di stato `Fact(step="ask_observations")`.  
+Per ogni risposta affermativa viene asserito un fatto simbolico nella Working Memory:
 
-* `Fact(acqua_torbida="si")`
-* `Fact(cattivo_odore="si")`
-* ...etc.
+* `Fact(osservazione_torbida="si")`
+* `Fact(osservazione_odore="si")`
+* `Fact(osservazione_sapore="si")`
 
-**Nota progettuale:** L'uso di fatti simbolici permette di integrare la conoscenza esperta qualitativa con le successive misurazioni strumentali, creando un contesto diagnostico multidimensionale.
+Al termine della fase osservazionale, il sistema passa alla fase strumentale dichiarando `Fact(step="ask_ph")`.
+
+**Nota progettuale:** l’uso di fatti simbolici permette di integrare evidenze qualitative (osservazione visiva/olfattiva/gustativa) con le misurazioni numeriche successive, rendendo il ragionamento più espressivo rispetto a un flusso basato solo su soglie.
+
 
 ### 3.3.3 Acquisizione dei parametri numerici
 
-I parametri quantitativi sono acquisiti in step successivi, attivati da fatti di stato (es. `Fact(step="...")`). Tutti i dati numerici sono rappresentati uniformemente:
+I parametri quantitativi sono acquisiti in step successivi, attivati da fatti di stato (es. `Fact(step="...")`). Tutti i dati numerici sono rappresentati in modo uniforme tramite:
 
 > `Fact(param="<nome_parametro>", value=<valore>)`
 
-Questa struttura evita la proliferazione di tipi di fatto diversi e permette di scrivere regole relazionali generiche o specifiche con estrema facilità.
+Questa struttura evita la proliferazione di tipi di fatto diversi e rende più semplice scrivere regole che controllano soglie o combinazioni di parametri.
 
-#### Parametri e Soglie Critiche
+Nel progetto vengono acquisiti i seguenti parametri (in ordine di inserimento):  
+`ph`, `sulfate`, `turbidity`, `solids`, `hardness`, `chloramines`, `conductivity`, `organic_carbon`, `trihalomethanes`.
 
-Il sistema valida i dati rispetto a soglie predefinite (costanti di progetto):
+#### Parametri, soglie e fatti generati
 
-| Parametro | Soglia / Range | Fatto Generato in caso di anomalia |
-| --- | --- | --- |
-| **pH** | 6.5 - 8.5 | `Fact(problema_ph="acido/basico")` |
-| **Solfati** | > 250 mg/L | `Fact(problema_solfati="alto")` |
-| **Torbidità** | > 5.0 NTU | `Fact(problema_torbidita="alta")` |
-| **Solidi (TDS)** | > 1000 mg/L | `Fact(problema_solidi="alto")` |
+Il sistema confronta i valori con soglie definite come costanti (WHO / soglie operative nel codice). Quando una soglia viene violata, il KBS asserisce un fatto di anomalia e (in molti casi) incrementa il contatore delle anomalie.
 
-**Integrazione Ibrida:** Per la durezza e i solidi, il sistema non si limita alle soglie fisse, ma confronta il valore con la **media del dataset**. Se il valore supera la media (pur restando sotto la soglia critica), viene generato un warning informativo, dimostrando un uso ibrido di conoscenza esperta e statistica.
+| Parametro (`param`) | Soglia / Range nel progetto | Fatto generato in caso di anomalia | Nota |
+| --- | --- | --- | --- |
+| **ph** | `< 6.5` oppure `> 8.5` | `Fact(problema_ph="acido")` / `Fact(problema_ph="basico")` | incrementa anomalie |
+| **sulfate** | `> 250` | `Fact(problema_solfati="alto")` | incrementa anomalie |
+| **turbidity** | `> 5.0` | `Fact(problema_torbidita="alta")` | incrementa anomalie |
+| **solids** | `> 1000` | `Fact(problema_solidi="alto")` | incrementa anomalie |
+| **hardness** | `> 300` | *(nessun fatto di “problema”)* | messaggio informativo, non incrementa |
+| **chloramines** | `> 4.0` | `Fact(problema_chimico="cloramine")` | incrementa anomalie |
+| **conductivity** | `> 800` | *(nessun fatto di “problema”)* | messaggio informativo, non incrementa |
+| **organic_carbon** | `> 10.0` | `Fact(problema_biologico="carbonio")` | incrementa anomalie |
+| **trihalomethanes** | `> 80.0` | `Fact(problema_tossico="thm")` | incrementa anomalie |
+
+**Nota di coerenza con l'osservazione:** se l’utente ha indicato osservazione visiva di torbidità (`Fact(osservazione_torbida="si")`), prima dell’inserimento della torbidità strumentale il sistema mostra un promemoria (integrazione tra evidenza qualitativa e misura numerica).
+
 
 ---
 
@@ -547,12 +700,12 @@ Il sistema utilizza le regole stesse per gestire la propria esecuzione. La caten
 
 ### 3.4.2 Regola relazionale: Rischio Corrosione
 
-Una delle regole più avanzate combina più parametri per identificare rischi complessi:
+Una regola relazionale combina più parametri per identificare una condizione di rischio elevato (criticità), andando oltre il controllo di soglie isolate.
 
-* **Condizione**: pH < 6.0 **AND** Solfati > 200 **AND** `Fact(action="analyze")`.
+* **Condizione**: pH < 6.0 **AND** Solfati > 200.
 * **Conclusione**: `Fact(problem_type="critical")`.
 
-Il sistema utilizza un fatto di controllo globale `Fact(action="analyze")`, asserito al termine della fase osservazionale. Questo fatto funge da gatekeeper (interruttore logico) per abilitare le regole relazionali critiche solo quando l'utente ha completato l'anamnesi preliminare, prevenendo falsi positivi durante l'inizializzazione.
+Questa regola è significativa perché mostra un ragionamento **multi-parametro**: la criticità non deriva da un singolo valore anomalo, ma dalla combinazione di condizioni chimiche potenzialmente pericolose.
 
 ---
 
@@ -564,11 +717,11 @@ Il KBS funge da "cervello" che identifica il problema, delegando la risoluzione 
 
 Il sistema mappa le anomalie rilevate su specifiche tipologie di intervento:
 
-* **Chimico**: Attivato da problemi di pH.
-* **Fisico**: Attivato da alta torbidità o solidi.
-* **Critico**: Attivato dalla combinazione di più fattori (es. pH anomalo + torbidità).
+* **Chemical**: attivato quando vengono rilevate anomalie di tipo chimico (es. `problema_ph`, `problema_solfati`, `problema_chimico`).
+* **Physical**: attivato quando vengono rilevate anomalie fisiche strumentali (es. `problema_torbidita`, `problema_solidi`).
+* **Critical**: attivato quando scatta la regola relazionale di rischio elevato (pH < 6.0 **AND** Solfati > 200).
 
-Questa architettura realizza una separazione netta tra **diagnosi simbolica** e **pianificazione dei vincoli**.
+Questa architettura realizza una separazione netta tra **diagnosi simbolica** e **pianificazione a vincoli**.
 
 ---
 
@@ -576,7 +729,7 @@ Questa architettura realizza una separazione netta tra **diagnosi simbolica** e 
 
 La regola `final_report` chiude l'analisi quando viene rilevato `Fact(fine_analisi="si")`. Il verdetto si basa sul peso delle evidenze accumulate:
 
-* **Esito Negativo**: Se `problems_found == 0`, l'acqua è considerata potabile.
+* **Esito Negativo**: Se `problems_count == 0`, l'acqua è considerata potabile.
 * **Esito Positivo (Anomalia)**: Viene riportato il numero totale di violazioni dei parametri.
 
 La decisione finale è **deterministica, spiegabile e tracciabile**, poiché ogni anomalia è legata a un fatto specifico inserito nella Working Memory.
@@ -593,33 +746,37 @@ La decisione finale è **deterministica, spiegabile e tracciabile**, poiché ogn
 
 ## 3.8 Limiti del KBS e possibili miglioramenti
 
-1. **Gating delle regole**: La mancanza del fatto di controllo `action="analyze"` limita alcune inferenze relazionali.
-2. **Centralizzazione delle soglie**: Le soglie sono attualmente cablate nelle regole; sarebbe preferibile una gestione centralizzata tramite costanti o file di configurazione.
-3. **Sistema di scoring**: Attualmente ogni anomalia ha lo stesso "peso". Un miglioramento significativo sarebbe l'introduzione di un sistema a punteggio pesato o logica fuzzy per definire il grado di pericolosità.
+1. **Copertura limitata di regole relazionali**: il sistema include regole che combinano più parametri, ma il numero di combinazioni critiche gestite è volutamente contenuto. Un miglioramento naturale sarebbe introdurre ulteriori regole multi-parametro (es. combinazioni che includano anche torbidità/solidi) mantenendo però la KB leggibile e manutenibile.
+2. **Centralizzazione delle soglie**: le soglie sono attualmente cablate nelle regole; sarebbe preferibile una gestione centralizzata tramite costanti o file di configurazione, per facilitare manutenzione e aggiornamenti.
+3. **Sistema di scoring**: attualmente ogni anomalia contribuisce in modo simile al verdetto finale. Un miglioramento significativo sarebbe introdurre un sistema a punteggio pesato (o logica fuzzy) per rappresentare meglio la gravità relativa dei diversi problemi.
 
 
 ---
+# 4. Ontologia OWL: supporto semantico e inferenza opzionale
 
-# 4. Ontologia OWL: Inferenza Semantica e Classificazione Automatica
+Questa sezione descrive l’uso dell’**ontologia OWL** all’interno del progetto.  
+Nel sistema, l’ontologia è usata principalmente come **modello concettuale del dominio** (parametri, concetti e relazioni) e come base per **inferenza opzionale** tramite reasoner (Pellet), quando disponibile.
 
-Questa sezione descrive l’uso dell’**ontologia OWL** all’interno del progetto. A differenza di approcci che usano OWL come semplice dizionario tassonomico, questo progetto sfrutta le capacità espressive di **OWL DL (Description Logic)** per implementare un motore di classificazione semantica parallelo al KBS.
+È importante notare che, in questa versione del progetto, **le decisioni operative (KBS e CSP) non dipendono direttamente dagli esiti del reasoner**: l’ontologia fornisce soprattutto uno strato semantico e dimostrativo, utile per estensioni future (ad es. integrare la classificazione OWL nel flusso diagnostico).
 
 File di riferimento:
 - `ontology/water_quality.owl`
-- `ontology/ontology_builder.py` (costruzione programmatica delle classi definite)
-- `src/ontology_manager.py` (inferenza tramite Pellet)
+- `ontology/ontology_builder.py` (costruzione/estensione programmatica)
+- `src/ontology_manager.py` (caricamento e reasoner Pellet)
 
 ---
 
-## 4.1 Ruolo dell’ontologia: dal Dizionario al Motore Logico
+## 4.1 Ruolo dell’ontologia: modello concettuale e classificazione semantica 
 
-Mentre il KBS (`expert_system.py`) ragiona in modo procedurale ("Se il pH è < 6.5 allora stampa errore"), l'ontologia definisce la **semantica dei dati**. Il ruolo dell'ontologia è trasformare dati grezzi (es. `pH=5.0`) in concetti di alto livello (es. `AcidicWater`) attraverso il ragionamento automatico, senza scrivere codice `if/else`.
+Mentre il KBS (`expert_system.py`) gestisce la diagnosi tramite regole e soglie numeriche, l’ontologia definisce la **semantica del dominio**: classi e proprietà che descrivono formalmente i concetti (es. campione d’acqua, parametri misurati, condizioni di rischio).
 
----
+Quando il reasoner è disponibile, è possibile istanziare un individuo (un “campione”) e ottenere una **classificazione automatica** in classi come `AcidicWater`, `HighSulfateWater`, `TurbidWater` e `UnsafeWater`.  
+Nel progetto questa inferenza è mantenuta **separata** dalla logica decisionale del KBS, ma dimostra come il dominio possa essere arricchito in modo dichiarativo e riutilizzabile.
+
 
 ## 4.2 Struttura Avanzata dell’ontologia
 
-L’ontologia è stata modellata per supportare la classificazione automatica tramite il reasoner.
+L’ontologia è stata modellata per consentire la classificazione automatica tramite reasoner, quando disponibile, come supporto semantico e dimostrazione di inferenza OWL.
 
 ### 4.2.1 Data Properties
 
@@ -672,19 +829,20 @@ Questo approccio è coerente con una prospettiva di:
 
 ### 4.3.2 `ontology_manager.py`
 
-Il modulo ontology_manager.py gestisce il ciclo di vita semantico:
-1. **Istanziazione Dinamica**: All'avvio (o durante l'analisi), viene creato un individuo temporaneo popolato con i dati dei sensori (es. `has_sulfate_value = [300.0]`).
-2. **Sincronizzazione**: Viene invocato `sync_reasoner_pellet()`.
-3. **Classificazione Automatica**: Il reasoner analizza le proprietà e modifica la gerarchia `is_a` dell'individuo.
+Il modulo `ontology_manager.py` gestisce il ciclo di vita semantico dell’ontologia:
+1. **Caricamento e istanziazione**: viene caricato il file OWL e, quando necessario, può essere creato un individuo (“campione”) popolato con valori numerici tramite data properties (es. `has_sulfate_value = [300.0]`).
+2. **Ragionamento (opzionale)**: viene tentata l’esecuzione di `sync_reasoner_pellet()`.
+3. **Classificazione automatica**: se il reasoner è disponibile, le restrizioni OWL vengono applicate e l’individuo può essere classificato in classi definite (es. `HighSulfateWater`, `UnsafeWater`), aggiornando la sua gerarchia `is_a`.
 
-#### Esempio di funzionamento verificato
+#### Esempio di funzionamento (inferenza OWL)
 Se viene inserito un campione con `Solfati = 300.0` e `pH = 7.0`:
 
-1. Il reasoner verifica la restrizione `> 250.0`.
-2. Inferisce che l'individuo appartiene alla classe `HighSulfateWater`.
-3. Poiché `HighSulfateWater` è sottoclasse (nell'unione) di `UnsafeWater`, inferisce a cascata che il campione è `UnsafeWater`.
+1. il reasoner verifica la restrizione `> 250.0`;
+2. inferisce che l’individuo appartiene alla classe `HighSulfateWater`;
+3. dato l’assioma di unione, deduce a cascata l’appartenenza a `UnsafeWater`.
 
-Questo processo avviene in modo totalmente deduttivo, validando le regole procedurali del KBS con una "seconda opinione" logico-formale.
+Questa inferenza deduce e mostra come l’ontologia possa trasformare valori numerici in concetti di alto livello. Nel progetto, la classificazione OWL è mantenuta **separata** dalla logica decisionale del KBS (che resta rule-based), ma costituisce una base solida per estensioni future in cui i risultati del reasoner possano essere integrati nel flusso diagnostico.
+
 
 ---
 
@@ -927,68 +1085,51 @@ Questa scelta:
 
 ## 5.4 Modellazione del CSP
 
-Il problema di scheduling è modellato come un CSP classico, definendo:
+Il problema di scheduling è modellato come un CSP classico nel modulo `src/scheduler.py`, definendo:
 
-- **variabili**
-- **domini**
-- **vincoli**
+- **Variabili**: `staff`, `giorno`, `turno`
+- **Domini**: giorni lavorativi e fasce orarie; il dominio di `staff` viene **filtrato a priori** in base a `issue_type` (chemical / physical / critical) ricevuto dal KBS
+- **Vincoli**: vincoli di disponibilità/turnazione e compatibilità (es. alcune risorse non sono assegnabili in certi giorni o turni)
 
-L’obiettivo non è la complessità industriale del problema, ma la **corretta formalizzazione** e integrazione nel sistema.
+L’obiettivo non è la complessità industriale del problema, ma la **corretta formalizzazione** e l’integrazione nel flusso *diagnosi → pianificazione* (KBS → CSP), mantenendo il modello estendibile (aggiunta di nuove risorse o vincoli senza modificare le regole diagnostiche).
 
 ---
-
 ### 5.4.1 Variabili del CSP
 
-Nel modulo `scheduler.py`, le variabili rappresentano le decisioni da prendere, tipicamente:
+Nel modulo `src/scheduler.py`, le variabili rappresentano una singola assegnazione operativa dell’intervento:
 
-- assegnazione di un **laboratorio**;
-- selezione di un **turno**;
-- eventuale priorità dell’intervento.
+- **`staff`**: membro del personale assegnato;
+- **`giorno`**: giorno della settimana;
+- **`turno`**: fascia oraria.
 
-Esempio concettuale di variabile:
-```text
-Laboratory_Assignment
-````
-
-Il valore della variabile rappresenta la risorsa scelta per l’intervento.
+La soluzione del CSP è quindi una terna del tipo `(staff, giorno, turno)` coerente con la tipologia di problema diagnosticata.
 
 ---
 
 ### 5.4.2 Domini delle variabili
 
-Il dominio di ciascuna variabile è costituito da un insieme finito di valori possibili, ad esempio:
+I domini sono insiemi finiti di valori possibili:
 
-* `chemical_lab`
-* `physical_lab`
-* `critical_lab`
-* (eventuali slot temporali disponibili)
+- **Dominio temporale**:
+  - `giorno ∈ {Lunedi, Martedi, Mercoledi, Giovedi, Venerdi}`
+  - `turno ∈ {Mattina (08-14), Pomeriggio (14-20)}`
+- **Dominio del personale (`staff`)**:
+  - viene **filtrato a priori** in base al parametro `issue_type` passato dal KBS (`chemical`, `physical`, `critical`), così da limitare la ricerca a risorse competenti per quel tipo di intervento.
 
-Il dominio effettivo dipende dal `issue_type` passato dal KBS:
-
-* problemi chimici → dominio limitato ai laboratori chimici;
-* problemi fisici → dominio limitato ai laboratori fisici;
-* problemi critici → dominio ristretto a risorse prioritarie.
-
-Questa riduzione del dominio è una forma di **propagazione dei vincoli a monte**, che semplifica la ricerca della soluzione.
+Questa riduzione del dominio `staff` è una forma di propagazione dei vincoli “a monte” che riduce lo spazio degli stati e rende la risoluzione immediata.
 
 ---
 
 ### 5.4.3 Vincoli del CSP
 
-I vincoli modellano le restrizioni operative del problema.
-Nel progetto, i vincoli includono concettualmente:
+I vincoli modellano restrizioni operative e di disponibilità. Nel progetto sono implementati vincoli del tipo:
 
-* **vincoli di compatibilità**:
+- **vincoli di disponibilità su giorno/turno** (es. una risorsa non è disponibile in un determinato giorno);
+- **vincoli di turnazione/competenza** (es. una risorsa junior non è assegnabile al turno pomeridiano);
+- **vincoli di compatibilità impliciti tramite dominio**: un problema di tipo `chemical` non può essere assegnato a risorse non chimiche, perché tali risorse non compaiono nel dominio `staff` filtrato per quello `issue_type`.
 
-  * un problema chimico non può essere assegnato a un laboratorio fisico;
-* **vincoli di disponibilità**:
+Anche se il problema è volutamente semplice, la modellazione è dichiarativa ed estendibile: nuove risorse o vincoli possono essere aggiunti senza modificare le regole diagnostiche del KBS.
 
-  * alcune risorse possono essere disponibili solo in certi slot;
-* **vincoli di priorità**:
-
-  * i casi critici devono essere gestiti con risorse dedicate o prioritarie.
-
-Anche se il problema è volutamente semplice, la struttura è coerente con un CSP reale e facilmente estendibile.
 
 ---
 
@@ -1261,91 +1402,92 @@ Questa scelta è coerente con l’obiettivo del progetto:
 
 Per evitare valutazioni fuorvianti basate su:
 - un singolo split train/test;
-- una sola matrice di confusione;
+- un singolo run (es. una matrice di confusione o un classification report);
 
-il progetto utilizza **Cross-Validation**.
+il progetto utilizza **cross-validation**, in modo da stimare le prestazioni in maniera più robusta e confrontabile tra modelli.
 
-Questa scelta è esplicitamente in linea con le linee guida dell’insegnamento.
+Questa scelta è in linea con le linee guida dell’insegnamento.
 
 ---
 
 ### 6.5.2 Cross-Validation
 
-Nel metodo `cross_validate` di `ml_models.py`:
-- viene applicata una **k-fold cross-validation** (tipicamente k = 10);
-- per ciascun fold viene calcolata l’accuracy;
-- vengono restituiti:
-  - media (`mean`);
-  - deviazione standard (`std`).
+Nel modulo `src/ml_models.py` la valutazione è effettuata con **10-fold cross-validation**.
+Per ciascun fold viene calcolata la metrica scelta e, come risultato finale, vengono riportati:
+
+- **media** (`mean`);
+- **deviazione standard** (`std`).
 
 Questo consente di stimare:
-- performance attesa;
-- stabilità del modello.
+- prestazione attesa del modello;
+- stabilità al variare della partizione dei dati.
 
 ---
 
 ### 6.5.3 Metriche utilizzate
 
-La metrica principale utilizzata è:
+La metrica utilizzata per il confronto tra modelli è:
 
-- **Accuracy**
+- **Accuracy** 
 
 La scelta è motivata da:
 - natura binaria del problema;
-- obiettivo comparativo tra modelli.
+- obiettivo comparativo tra modelli;
+- aderenza alle linee guida (risultati mediati, non singolo run).
 
-Metriche più complesse non vengono introdotte per evitare:
-- ridondanza;
-- allungamento non necessario della documentazione.
+Metriche aggiuntive non vengono introdotte in questa valutazione comparativa per evitare ridondanza e mantenere la documentazione focalizzata sulle scelte realmente impiegate nel progetto.
 
 ---
-## 6.6 Valutazione Sperimentale Rigorosa
+## 6.6 Valutazione sperimentale rigorosa
 
-Per garantire la robustezza dei risultati ed evitare bias dovuti a una singola partizione dei dati (problema comune data la varianza del dataset), è stato adottato un protocollo di validazione rigoroso basato su **Stratified K-Fold Cross-Validation** ($k=10$).
+Per garantire la robustezza dei risultati ed evitare bias dovuti a una singola partizione dei dati, è stato adottato un protocollo di validazione basato su **10-fold cross-validation**.  
+L’obiettivo è ottenere una stima più affidabile delle prestazioni medie e della loro stabilità, riportando **media ± deviazione standard**.
 
-### 6.6.1 Risultati della Cross-Validation
+### 6.6.1 Risultati della Cross-Validation (mean ± std)
 
-I valori riportati rappresentano la media delle metriche sui 10 fold. La Deviazione Standard ($\sigma$) è fondamentale per valutare la stabilità del modello: un $\sigma$ basso indica che il modello è robusto e non dipende dallo specifico sottoinsieme di training.
+I valori riportati rappresentano la **media ± deviazione standard** dell’Accuracy sui 10 fold.  
+La deviazione standard ($\sigma$) è importante per valutare la stabilità del modello: un $\sigma$ basso indica prestazioni più consistenti al variare del fold.
 
-| Modello              | CV folds | Accuracy (mean)  | Std Dev ($\sigma$) | Precision | Recall | F1-Score |
-|----------------------|----------|------------------|--------------------|-----------|--------|----------|
-| Logistic Regression  | 10       | 0.6102           | $\pm$ 0.0017       | 0.62      | 0.58   | 0.60     |
-| Decision Tree        | 10       | 0.6190           | $\pm$ 0.0347       | 0.63      | 0.60   | 0.61     |
-| KNN (k=5)            | 10       | 0.5641           | $\pm$ 0.0175       | 0.55      | 0.52   | 0.53     |
-| Neural Network MLP   | 10       | 0.5196           | $\pm$ 0.0992       | 0.64      | 0.62   | 0.63     |
-| Naive Bayes          | 10       | 0.6151           | $\pm$ 0.0552       | 0.60      | 0.59   | 0.59     |
+| Modello             | CV folds | Accuracy (mean ± std) |
+|---------------------|---------:|------------------------|
+| Logistic Regression | 10       | 0.6102 ± 0.0017        |
+| Decision Tree       | 10       | 0.6190 ± 0.0347        |
+| KNN (k=5)           | 10       | 0.5641 ± 0.0175        |
+| Neural Network MLP  | 10       | 0.5196 ± 0.0992        |
+| Naive Bayes         | 10       | 0.6151 ± 0.0552        |
 
-*(Nota: I valori in tabella sono indicativi delle esecuzioni medie. Il modello Neural Network, seppur più costoso computazionalmente, mostra una leggera superiorità nella capacità di apprendere relazioni non lineari).*
+*(I valori numerici sono ottenuti eseguendo gli script in `main_ml.py`. Eventuali piccole variazioni tra run possono dipendere da componenti con casualità, se non viene fissato un `random_state`.)*
 
-La valutazione dei modelli è stata effettuata tramite **10-fold cross-validation**,
-riportando l’accuracy come **media ± deviazione standard**.
-Questa scelta consente di ottenere una stima robusta delle prestazioni,
-evitando conclusioni basate su un singolo split train/test.
+### 6.6.2 Nota su valutazioni “single split” 
 
-Le metriche calcolate su un singolo test set sono state utilizzate
-**esclusivamente a fini illustrativi** e non per il confronto tra modelli.
-*(I valori numerici sono ottenuti eseguendo gli script in `main_ml.py`.)*
+Nel progetto possono essere presenti anche valutazioni su un singolo split train/test (ad es. matrice di confusione o classification report), ma queste sono da considerarsi **solo illustrative**.  
+Per il confronto tra modelli in questa documentazione si usano esclusivamente risultati **mediati in cross-validation** (mean ± std), in linea con le linee guida dell’insegnamento.
 
 ---
 
-## 6.7 Analisi Critica: ML vs. Approccio Simbolico (KBS)
+## 6.7 Analisi critica: ML vs approccio simbolico (KBS)
 
-L'analisi dei risultati ML evidenzia un limite intrinseco dell'approccio puramente statistico su questo dominio: l'accuracy si attesta intorno al 60-65%. Questo dato, lungi dall'essere un fallimento, giustifica l'intera architettura ibrida del progetto.
+I risultati della cross-validation mostrano che i modelli ML ottengono un’accuracy media intorno a ~0.60, con variabilità diversa a seconda dell’algoritmo (deviazione standard più o meno alta).
 
-1. **Limiti del ML (Sub-simbolico)**:
+Questo risultato è utile per contestualizzare il ruolo del ML nel progetto:
 
-- Il modello statistico fatica a generalizzare su dati rumorosi senza una conoscenza a priori.
-- Un'accuracy del 62% significa che quasi **4 campioni su 10 vengono classificati erroneamente**. In un contesto di salute pubblica (potabilità), un errore del 40% è inaccettabile.
-- Il ML è una "black box": non spiega perché l'acqua non è potabile.
+1. **Cosa fornisce il ML (nel progetto)**
+   - una stima statistica della potabilità basata sul dataset `water_potability.csv`;
+   - un confronto tra modelli con protocollo robusto (CV mean ± std);
+   - un output utile come baseline e confronto metodologico.
 
-2. **Forza del KBS (Simbolico)**:
+   Tuttavia, il ML:
+   - non produce di per sé una spiegazione “a regole” (causale/interpretabile);
+   - dipende dalla qualità/rumorosità del dataset e dalla presenza di missing values.
 
-Il Sistema Esperto, basato sulle soglie WHO (es. `Solfati > 250`), garantisce **sicurezza deterministica**. Se un valore supera la soglia, l'acqua viene scartata col 100% di certezza.
+2. **Cosa fornisce il KBS**
+   - un comportamento deterministico rispetto alla KB (soglie e regole esplicite);
+   - spiegazioni dirette (“anomalia su pH/solfati/torbidità...”) perché ogni decisione è legata a fatti specifici;
+   - un collegamento naturale all’azione operativa, perché le regole inferiscono `need_lab`/`problem_type` e attivano il CSP.
 
-Il KBS offre **spiegabilità** ("Non potabile perché i solfati sono alti"), fondamentale per l'intervento tecnico (CSP).
+### Conclusione della valutazione
+Nel progetto il ML è usato come **termine di confronto** e supporto statistico, mentre la decisione operativa è guidata principalmente dal **ragionamento rule-based** del KBS. L’ontologia resta un supporto semantico **opzionale** (reasoner) e descrittivo, non il driver della decisione.
 
-#### Conclusione della Valutazione
-L'esperimento dimostra che **il solo Machine Learning non è sufficiente** per garantire la sicurezza idrica. Il modello ML può essere usato come sistema di early warning o screening rapido su grandi moli di dati, ma la validazione finale deve passare attraverso le regole rigide del **KBS** e la validazione semantica dell'**Ontologia**.
 
 ---
 
@@ -1411,7 +1553,8 @@ rendendo il sistema chiaro, estendibile e facilmente valutabile.
 Il **KBS** rappresenta il nucleo centrale del progetto, sia per la quantità di conoscenza esplicitata nella KB, sia per l’uso di regole relazionali che combinano più parametri.  
 La **componente ML** non è usata come semplice esercizio su dataset, ma come termine di confronto metodologico, con una valutazione sperimentale coerente con le linee guida dell’insegnamento.
 
-Un punto di forza distintivo è l'evoluzione dell'ontologia da semplice tassonomia a sistema di classificazione automatica: l'uso di Defined Classes e operatori logici (Unione) permette al reasoner di dedurre lo stato di sicurezza dell'acqua (UnsafeWater) direttamente dai dati grezzi, offrendo una validazione semantica parallela alla logica rule-based.
+Un punto di forza distintivo è l’uso dell’ontologia non come semplice tassonomia, ma come **strato semantico** che consente (quando il reasoner è disponibile) la **classificazione automatica** di un campione in classi definite, tramite costrutti OWL come le *Defined Classes* e l’operatore di *Unione* (es. deduzione di `UnsafeWater` a partire da proprietà numeriche). In questa versione del progetto, la classificazione OWL è mantenuta **separata** dalla logica decisionale del KBS (che resta rule-based e guida diagnosi e azione/CSP) ed è **opzionale** grazie al meccanismo di fallback; rappresenta comunque una base chiara ed estendibile per future integrazioni in cui gli esiti del reasoner possano essere utilizzati come ulteriore informazione nel processo diagnostico.
+
 
 Nel complesso, il progetto dimostra la capacità di:
 - progettare e implementare un sistema di Ingegneria della Conoscenza non banale;
