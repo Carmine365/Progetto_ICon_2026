@@ -29,7 +29,7 @@ Progetto realizzato per l'esame di Ingegneria della Conoscenza.
 
 ## 📋 Descrizione del Progetto
 
-Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per la valutazione della qualità dell'acqua. L'architettura è ibrida e combina due approcci dell'Intelligenza Artificiale:
+Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per la valutazione della qualità dell'acqua. L'architettura è ibrida e L'architettura è ibrida e combina più approcci dell'Intelligenza Artificiale:
 
 1.  **Approccio Data-Driven (Machine Learning):** Analisi statistica e predittiva su dataset storici per classificare rapidamente la potabilità.
 2.  **Approccio Knowledge-Based (Sistema Esperto):** Ragionamento simbolico basato su regole esplicite (standard WHO) e ontologie per validare i risultati e gestire casi critici (es. contaminazione chimica).
@@ -77,6 +77,8 @@ Addestramento di classificatori supervisionati per predire la variabile target `
 * *Logistic Regression*: Baseline statistica.
 * *Decision Tree*: Modello interpretabile a regole.
 * *K-Nearest Neighbors (KNN)*: Classificazione basata su similarità.
+* *Neural Network (MLP)*: modello non-lineare più flessibile.
+* *Gaussian Naive Bayes*: modello probabilistico generativo.
 
 * **Metriche:** Accuracy (utilizzata come metrica principale, mediata in cross-validation); altre metriche (Precision, Recall, F1-Score) sono calcolate a supporto.
 
@@ -93,7 +95,7 @@ Un agente intelligente implementato con la libreria `experta` (basata sull'algor
 
 Strato semantico che modella formalmente il dominio (campione d’acqua, parametri e classi di rischio) e abilita inferenza automatica quando disponibile un reasoner.
 
-* **Classi/concetti principali:** `WaterSample`, `AcidicWater`, `BasicWater`, `HighSulfateWater`, `TurbidWater`, `UnsafeWater`, `CorrosiveWater`.
+* **Classi/concetti principali:** `WaterSample`, `AcidicWater`, `HighSulfateWater`, `TurbidWater`, `UnsafeWater`, `CorrosiveWater`.
 * **Data Properties:** `has_ph_value`, `has_sulfate_value`, `has_turbidity_value`.
 * **Integrazione nel codice:** `src/ontology_manager.py`
   * recupera descrizioni dei parametri (es. `get_parameter_description`);
@@ -128,7 +130,8 @@ Componente applicativa per l’utilizzo interattivo del sistema e per stimare in
 2. **Clonare la repository** (o scaricare lo zip):
 ```bash
 git clone https://github.com/Carmine365/Progetto_ICon_2026.git
-cd WATER_QUALITY_PROJECT
+cd Progetto_ICon_2026
+
 
 ```
 
@@ -146,7 +149,7 @@ pip install -r requirements.txt
 
 ## 💻 Guida all'Utilizzo
 
-Il software offre due modalità di esecuzione distinte.
+Il software offre tre modalità di esecuzione distinte.
 
 ### Modalità 1: Analisi Dati & Training (ML)
 
