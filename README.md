@@ -29,7 +29,7 @@ Progetto realizzato per l'esame di Ingegneria della Conoscenza.
 
 ## 📋 Descrizione del Progetto
 
-Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per la valutazione della qualità dell'acqua. L'architettura è ibrida e L'architettura è ibrida e combina più approcci dell'Intelligenza Artificiale:
+Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per la valutazione della qualità dell'acqua. L'architettura è ibrida e combina più approcci dell'Intelligenza Artificiale:
 
 1.  **Approccio Data-Driven (Machine Learning):** Analisi statistica e predittiva su dataset storici per classificare rapidamente la potabilità.
 2.  **Approccio Knowledge-Based (Sistema Esperto):** Ragionamento simbolico basato su regole esplicite (standard WHO) e ontologie per validare i risultati e gestire casi critici (es. contaminazione chimica).
