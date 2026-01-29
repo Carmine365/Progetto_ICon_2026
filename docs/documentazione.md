@@ -751,7 +751,7 @@ La regola `final_report` chiude l'analisi quando viene rilevato `Fact(fine_anali
 
 La decisione finale è **deterministica, spiegabile e tracciabile**, poiché ogni anomalia è legata a un fatto specifico inserito nella Working Memory.
 
-![Output del sistema esperto – caso normale](images/main_expert_normal_output.png)
+![Output del sistema esperto – caso normale](images/main_expertTerminal2.png)
 
 *Output finale del sistema esperto in un caso normale senza anomalie. Tutti i parametri analizzati rientrano nei range di sicurezza e il sistema
 conclude per la potabilità del campione, senza attivare interventi operativi.*
