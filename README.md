@@ -34,10 +34,8 @@ Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per l
 1.  **Approccio Data-Driven (Machine Learning):** Analisi statistica e predittiva su dataset storici per classificare rapidamente la potabilità.
 2.  **Approccio Knowledge-Based (Sistema Esperto):** Ragionamento simbolico basato su regole esplicite (standard WHO) e ontologie per validare i risultati e gestire casi critici (es. contaminazione chimica).
 3.  **Ontologia OWL**  Modella concetti del dominio (campioni e condizioni di rischio) usata per recuperare descrizioni dei parametri, e per eseguire un controllo semantico con reasoner su classi definite
-4.  **CSP Scheduler (Constraint Satisfaction Problem)** In caso di problemi rilevati, il sistema può attivare un CSP per suggerire una assegnazione operativa **(staff, day, shift)** coerente con il tipo di issue
+4.  **CSP Scheduler (Constraint Satisfaction Problem)** In caso di problemi rilevati, il sistema può attivare un CSP per suggerire una assegnazione operativa **(staff, day, shift)** coerente con il tipo di issue, e per l'ottimizzazione della pianificazione dei turni nei laboratori di analisi.
 5.  **Interfaccia Streamlit + Modello Bayesiano**  È presente una UI Streamlit e un modulo bayesiano per stimare probabilità/indicatori di rischio
-
-Il sistema include anche un modulo **CSP (Constraint Satisfaction Problem)** per l'ottimizzazione della pianificazione dei turni nei laboratori di analisi.
 
 ---
 
@@ -80,14 +78,14 @@ Addestramento di classificatori supervisionati per predire la variabile target `
 * *Decision Tree*: Modello interpretabile a regole.
 * *K-Nearest Neighbors (KNN)*: Classificazione basata su similarità.
 
+* **Metriche:** Accuracy (utilizzata come metrica principale, mediata in cross-validation); altre metriche (Precision, Recall, F1-Score) sono calcolate a supporto.
 
-* **Metriche:** Accuracy, Precision, Recall, F1-Score (mediate su multiple esecuzioni).
 
 ### 2. Modulo Sistema Esperto (Rule-Based)
 
 Un agente intelligente implementato con la libreria `experta` (basata sull'algoritmo Rete) che applica regole di dominio.
 
-* **Knowledge Base:** Ontologia OWL gestita tramite `Owlready2` che definisce la semantica dei parametri (es. `WaterSample`, `ChemicalParameter`).
+* **Knowledge Base:** Ontologia OWL gestita tramite `Owlready2` che definisce la semantica del dominio (es. `WaterSample` e classi di anomalia come `AcidicWater`, `HighSulfateWater`).
 * **Regole WHO:** Implementazione di soglie rigide di sicurezza (es. `IF pH < 6.5 THEN Non-Potabile`).
 * **CSP Scheduler:** Utilizzo di `python-constraint` per allocare le analisi di laboratorio rispettando vincoli di orario e disponibilità dei tecnici.
 
@@ -161,7 +159,7 @@ python main_ml.py
 
 ### Modalità 2: Agente Esperto Interattivo
 
-Avvia l'interfaccia testuale per interrogare l'ontologia o sottoporre un nuovo campione d'acqua all'analisi dell'esperto artificiale.
+Avvia l’interfaccia testuale del sistema esperto per l’inserimento di osservazioni e parametri di un campione d’acqua e la relativa analisi rule-based.
 
 ```bash
 python main_expert.py
