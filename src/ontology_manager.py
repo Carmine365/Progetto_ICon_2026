@@ -1,107 +1,123 @@
-from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity
+from owlready2 import get_ontology, sync_reasoner_pellet, destroy_entity, DataPropertyClass
 import os
 
-class water_ontology:
+# 1. Rinominiamo la classe in 'water_ontology' (snake_case) 
+# per farla coincidere con la chiamata in main_expert.py
+class waterOntology: 
     def __init__(self):
-        # 1. Definizione Percorso Ontologia
-        path = os.path.join("ontology", "water_quality.owl")
+        # Definizione Percorso Ontologia
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = os.path.join(BASE_DIR, "ontology", "water_quality.owl")
+
         self.ontology = None
         self.dict_parameters = {}
 
-        # 2. Caricamento e Ragionamento (MODIFICA CHIAVE)
+        # Caricamento Ontologia
         print(f"--- Caricamento Ontologia: {path} ---")
-        self.ontology = get_ontology(path).load()
-        
-        # --- BLOCCO INFERENZA (Teoria Cap. 6) ---
-        # Attiviamo il Reasoner (Pellet) per dedurre nuova conoscenza.
-        # Questo trasforma l'ontologia da semplice "schema" a "motore semantico".
-        print("Avvio del Reasoner (Pellet) per l'inferenza semantica...")
         try:
-            with self.ontology:
-                # CASO 1: Creiamo un campione con Solfati pericolosi (300.0) e pH normale (7.0)
-                unsafe_sample = self.ontology.WaterSample("Campione_Pericoloso_Solfati")
-                unsafe_sample.has_sulfate_value = [300.0]
-                unsafe_sample.has_ph_value = [7.0]
-
-                # CASO 2: Creiamo un campione perfetto
-                safe_sample = self.ontology.WaterSample("Campione_Sicuro")
-                safe_sample.has_sulfate_value = [150.0]
-                safe_sample.has_ph_value = [7.2]
-                safe_sample.has_turbidity_value = [2.0]
-
-                # Sincronizziamo il reasoner
-                sync_reasoner_pellet() 
-
-                # VERIFICA CASO 1
-                print(f"\n🧪 Analisi Semantica 'Campione_Pericoloso_Solfati':")
-                classes_1 = [c.name for c in unsafe_sample.is_a if hasattr(c, 'name')]
-                print(f"   > Classi inferite: {classes_1}")
-                
-                if "UnsafeWater" in classes_1:
-                    print("   ✅ SUCCESSO: Classificato come 'UnsafeWater' (tramite HighSulfateWater)!")
-                
-                # VERIFICA CASO 2
-                print(f"\n💧 Analisi Semantica 'Campione_Sicuro':")
-                classes_2 = [c.name for c in safe_sample.is_a if hasattr(c, 'name')]
-                print(f"   > Classi inferite: {classes_2}")
-                
-                if "UnsafeWater" not in classes_2:
-                    print("   ✅ SUCCESSO: NON è classificato come 'UnsafeWater'.")
-
-                # Pulizia
-                destroy_entity(unsafe_sample)
-                destroy_entity(safe_sample)
-
+            self.ontology = get_ontology(path).load()
+            self._sanitize_strings_for_reasoner()
         except Exception as e:
-            print(f"Errore reasoner: {e}")
-
-    def get_parameters_descriptions(self):
-        """
-        Recupera le descrizioni pulite usando direttamente l'attributo .name
-        """
-        if not self.ontology:
+            print(f"[ERRORE] Impossibile caricare l'ontologia: {e}")
             return
 
-        # Svuotiamo il dizionario per sicurezza
-        self.dict_parameters = {}
+        # Carichiamo i parametri disponibili
+        self.load_parameters()
 
-        # Itera su tutti gli individui (es. pH, Hardness...)
+    def _sanitize_strings_for_reasoner(self):
+        """
+        Rimuove caratteri illegali (come l'apostrofo) dalle proprietà stringa.
+        """
+        if not self.ontology: return
+        try:
+            for i in self.ontology.individuals():
+                for prop in i.get_properties():
+                    if isinstance(prop, DataPropertyClass):
+                        values = getattr(i, prop.name)
+                        new_values = []
+                        changed = False
+                        for v in values:
+                            if isinstance(v, str) and "'" in v:
+                                new_values.append(v.replace("'", " "))
+                                changed = True
+                            else:
+                                new_values.append(v)
+                        if changed:
+                            setattr(i, prop.name, new_values)
+        except Exception as e:
+            print(f"Errore sanitizzazione: {e}")
+
+    def load_parameters(self):
+        """Scansiona l'ontologia per trovare parametri e descrizioni."""
+        if not self.ontology: return
+
+        self.dict_parameters = {} 
         for i in self.ontology.individuals():
-            # 1. Recupero Nome Pulito (La modifica chiave)
-            # Invece di str(i) che dà "ontology.ph", i.name dà solo "ph" o "Hardness"
             clean_name = i.name 
             
-            # 2. Recupero Descrizione
+            # Recupero descrizione
+            desc_text = "Descrizione non disponibile."
             if hasattr(i, "descrizione_parametro") and i.descrizione_parametro:
-                # owlready2 restituisce spesso una lista per le proprietà testo
                 desc_raw = i.descrizione_parametro
                 desc_text = desc_raw[0] if isinstance(desc_raw, list) else str(desc_raw)
-            else:
-                desc_text = "Descrizione non disponibile nell'ontologia."
 
-            # 3. Salvataggio nel dizionario
             self.dict_parameters[clean_name] = desc_text
+
+    # --- METODI MANCANTI AGGIUNTI PER IL MAIN ---
+    
+    def get_parameters_descriptions(self):
+        """Metodo richiesto dal main_expert.py."""
+        self.load_parameters()
 
     def print_parameters(self):
         """
-        Stampa solo l'elenco dei nomi per il menu di scelta.
+        Stampa i parametri e RESTITUISCE i dizionari per il menu del main.
         """
-        i = 1
-        dict_nums_params = {}
-        dict_nums_keys = {}
-
+        print("\n--- PARAMETRI NELL'ONTOLOGIA ---")
+        
+        indexed_descriptions = {}
+        indexed_names = {}
+        
         if not self.dict_parameters:
-            print("Nessun parametro caricato dall'ontologia.")
+            print("Nessun parametro caricato.")
             return {}, {}
 
-        print("\n--- PARAMETRI DISPONIBILI ---")
-        for k in self.dict_parameters.keys():
-            # MODIFICA: Stampiamo solo [Numero] Nome
-            # La descrizione la mostriamo solo quando l'utente sceglie!
-            print(f"[{i}] {k}")
+        # Creiamo un indice numerico per il menu (1, 2, 3...)
+        for idx, (name, desc) in enumerate(self.dict_parameters.items(), 1):
+            print(f"[{idx}] {name}")
+            indexed_descriptions[idx] = desc
+            indexed_names[idx] = name
             
-            dict_nums_params[i] = self.dict_parameters[k]
-            dict_nums_keys[i] = k
-            i = i + 1
+        # Restituisce esattamente i due valori che main_expert.py si aspetta
+        return indexed_descriptions, indexed_names
 
-        return dict_nums_params, dict_nums_keys
+    # ------------------------------------------------------------
+
+    def get_parameter_description(self, param_name):
+        return self.dict_parameters.get(param_name, "Nessuna descrizione trovata.")
+
+    def semantic_check(self, ph, sulfate):
+        """Verifica semantica dinamica per l'integrazione con la GUI."""
+        if not self.ontology: return False
+        
+        is_corrosive = False
+        try:
+            with self.ontology:
+                temp_sample = self.ontology.WaterSample("Temp_User_Sample")
+                temp_sample.has_ph_value = [float(ph)]
+                temp_sample.has_sulfate_value = [float(sulfate)]
+
+                sync_reasoner_pellet(infer_property_values=True, infer_data_property_values=True)
+                
+                corrosive_class = getattr(self.ontology, "CorrosiveWater", None)
+                if corrosive_class and corrosive_class in temp_sample.is_a:
+                    is_corrosive = True
+
+                destroy_entity(temp_sample)
+        except Exception as e:
+            print(f"[ERRORE REASONER] {e}")
+            
+        return is_corrosive
+
+# Istanza globale
+manager = waterOntology()

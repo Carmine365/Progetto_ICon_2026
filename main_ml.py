@@ -1,17 +1,16 @@
 import matplotlib.pyplot as plt
 import pandas as pd  # <--- È QUI
 import seaborn as sns
-from src.data_loader import water_data
+from src.data_loader import waterData
 from src.ml_models import (
-    water_log_reg, 
-    water_dec_tree, 
-    water_knn, 
-    water_neural_network, # <--- NUOVO
-    water_naive_bayes     # <--- NUOVO
+    waterLogReg, 
+    waterDecTree, 
+    waterKnn, 
+    waterNeuralNetwork, # <--- NUOVO
+    waterNaiveBayes     # <--- NUOVO
 )
 import warnings
 
-# Ignora warning di convergenza per demo didattica se le iterazioni sono poche
 warnings.filterwarnings('ignore') 
 
 def plot_model_comparison(results):
@@ -29,8 +28,6 @@ def plot_model_comparison(results):
     plt.xticks(rotation=45)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
     
-    # FIX: Iteriamo con enumerate per avere un indice intero sicuro (0, 1, 2...)
-    # invece di affidarci all'indice di pandas che il linter vede come "Hashable"
     for i, row in df_res.iterrows():
         # Convertiamo esplicitamente 'i' in float per accontentare il linter
         plt.text(float(i), row.Accuracy + 0.01, f"{row.Accuracy:.2f}", color='black', ha="center")
@@ -42,7 +39,7 @@ if __name__ == "__main__":
     
     # 1. Caricamento Dati
     print("--- 1. Caricamento Dataset Acqua ---")
-    data = water_data()
+    data = waterData()
     print("Dataset caricato correttamente.")
     
     final_results = []
@@ -50,11 +47,11 @@ if __name__ == "__main__":
     # --- DEFINIZIONE LISTA MODELLI ---
     # Usiamo un dizionario per ciclare in modo pulito
     models_to_run = [
-        ("Logistic Regression", water_log_reg(data, 0.2)),
-        ("Decision Tree", water_dec_tree(data, 0.2)),
-        ("KNN (k=5)", water_knn(data, 0.2, 5)),
-        ("Neural Network (MLP)", water_neural_network(data, 0.2)),
-        ("Naive Bayes", water_naive_bayes(data, 0.2))
+        ("Logistic Regression", waterLogReg(data, 0.2)),
+        ("Decision Tree", waterDecTree(data, 0.2, max_depth=10)),
+        ("KNN (k=5)", waterKnn(data, 0.2, 5)),
+        ("Neural Network (MLP)", waterNeuralNetwork(data, 0.2, hidden_layers=(100, 50, 20))),
+        ("Naive Bayes", waterNaiveBayes(data, 0.2))
     ]
 
     print("\n--- 2. Addestramento e Generazione Grafici ---")
@@ -66,8 +63,6 @@ if __name__ == "__main__":
         # Calcola media e deviazione standard su 10 fold
         print(f"   [1] Esecuzione Cross-Validation (10-fold)...")
         try:
-            # Nota: Assicurati di aver aggiunto il metodo evaluate_with_cross_validation in ml_models.py
-            # Se non l'hai fatto, il programma darà errore qui. Nel caso, commenta queste 2 righe.
             mean_acc, std_acc = model_obj.evaluate_with_cross_validation()
             print(f"       -> Accuracy Media: {mean_acc:.4f} (± {std_acc:.4f})")
             # USIAMO QUESTA PER IL REPORT (Più robusta)

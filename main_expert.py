@@ -1,7 +1,7 @@
 # --- FUNZIONI MAIN ---
 
 from src.expert_system import WaterExpert
-from src.ontology_manager import water_ontology
+from src.ontology_manager import waterOntology
 
 
 def main_agent():
@@ -21,7 +21,7 @@ def main_agent():
 
 def main_ontology():
     try:
-        do = water_ontology()
+        do = waterOntology()
         do.get_parameters_descriptions()
         params, keys_params = do.print_parameters()
 

@@ -9,19 +9,17 @@ from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.preprocessing import StandardScaler
 from sklearn import tree
 import matplotlib.pyplot as plt
-from typing import Final
 import numpy as np
 
 # Import relativo per il package src
-from .data_loader import water_data 
+from .data_loader import waterData 
 
-class water_model:
+class waterModel:
 
     def __init__(self, model, x, y, scores_dict: dict, test_size: float):
-        default_test_size: Final = 0.2
-
+        # Default safety check
         if not (0 < test_size < 1):
-            test_size = default_test_size
+            test_size = 0.2
 
         self.model = model
         self.x = x
@@ -46,7 +44,6 @@ class water_model:
     def get_y(self):
         return self.y
 
-    # --- METODI RIPRISTINATI PER COMPATIBILITÀ CON main_ml.py ---
     def get_metric(self, score_label: str):
         """Restituisce il valore di una metrica specifica dal dizionario scores"""
         return self.scores.get(score_label)
@@ -82,7 +79,6 @@ class water_model:
                 print(f"       [Warning] Impossibile generare ROC: {e}")
         else:
             print(f"       [Info] Il modello {self.__class__.__name__} non supporta la curva ROC (manca predict_proba).")
-    # ------------------------------------------------------------
 
     def get_confusion_matrix(self):
         if self.y_test is not None and self.y_predicted is not None:
@@ -95,14 +91,13 @@ class water_model:
     def evaluate_with_cross_validation(self, folds=10):
         """
         Esegue la Cross-Validation calcolando TUTTE le metriche.
-        Restituisce tuple (media_accuracy, std_accuracy) per compatibilità con main_ml.py.
+        Restituisce tuple (media_accuracy, std_accuracy).
         """
         scoring = ['accuracy', 'precision', 'recall', 'f1']
         
         # Eseguiamo la CV
         scores = cross_validate(self.model, self.x, self.y.ravel(), cv=folds, scoring=scoring)
         
-        # Salviamo Medie e Deviazioni Standard
         self.cv_means = {
             'Accuracy': scores['test_accuracy'].mean(),
             'Precision': scores['test_precision'].mean(),
@@ -117,10 +112,8 @@ class water_model:
             'F1': scores['test_f1'].std()
         }
         
-        # Restituiamo Accuracy Mean e Std come si aspetta il tuo main_ml.py
         return self.cv_means['Accuracy'], self.cv_stds['Accuracy']
 
-    # --- Metodi di supporto per il train/test split singolo ---
     def _single_split_fit(self):
         scaler = StandardScaler()
         if self.x_train is None or self.x_test is None or self.y_train is None:
@@ -138,59 +131,64 @@ class water_model:
             self.scores["Recall"] = recall_score(self.y_test, self.y_predicted, zero_division=0)
             self.scores["F1_precision"] = f1_score(self.y_test, self.y_predicted, zero_division=0)
         else:
-            self.scores["Accuracy"] = 0.0
-            self.scores["Precision"] = 0.0
-            self.scores["Recall"] = 0.0
-            self.scores["F1_precision"] = 0.0
+            self.scores.update({"Accuracy": 0.0, "Precision": 0.0, "Recall": 0.0, "F1_precision": 0.0})
 
-# --- SOTTOCLASSI ---
+# --- SOTTOCLASSI CORRETTE E PARAMETRIZZATE ---
 
-class water_log_reg(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterLogReg(waterModel):
+    def __init__(self, data: waterData, test_size: float, max_iter=1000):
         x, y = data.get_training_data()
-        super().__init__(LogisticRegression(max_iter=1000), x, y, {}, test_size)
+        # Parametro max_iter ora è dinamico
+        super().__init__(LogisticRegression(max_iter=max_iter), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
         self._single_split_fit()
 
-class water_dec_tree(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterDecTree(waterModel):
+    def __init__(self, data: waterData, test_size: float, max_depth=5):
         x, y = data.get_training_data()
-        super().__init__(tree.DecisionTreeClassifier(max_depth=5), x, y, {}, test_size)
+        # Parametro max_depth ora è dinamico (default 5)
+        super().__init__(tree.DecisionTreeClassifier(max_depth=max_depth), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
-        # I tree non necessitano di scaling obbligatorio
+        # I tree non necessitano di scaling obbligatorio, ma per coerenza con gli altri
+        # modelli potresti volerlo aggiungere. Qui manteniamo il comportamento originale.
         self.model.fit(self.x_train, self.y_train.ravel())
         self.y_predicted = self.model.predict(self.x_test)
         self._calculate_scores()
 
-class water_knn(water_model):
-    def __init__(self, data: water_data, test_size: float, neighbors: int):
+class waterKnn(waterModel):
+    def __init__(self, data: waterData, test_size: float, neighbors=5):
         x, y = data.get_training_data()
+        # Parametro neighbors è dinamico
         super().__init__(KNeighborsClassifier(n_neighbors=neighbors), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
         self._single_split_fit()
 
-class water_neural_network(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterNeuralNetwork(waterModel):
+    def __init__(self, data: waterData, test_size: float, hidden_layers=(64, 32), max_iter=1000):
         x, y = data.get_training_data()
-        super().__init__(MLPClassifier(hidden_layer_sizes=(64,32), max_iter=1000), x, y, {}, test_size)
+        # Parametri architetturali ora sono dinamici
+        super().__init__(MLPClassifier(hidden_layer_sizes=hidden_layers, max_iter=max_iter), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
         self._single_split_fit()
 
-class water_naive_bayes(water_model):
-    def __init__(self, data: water_data, test_size: float):
+class waterNaiveBayes(waterModel):
+    def __init__(self, data: waterData, test_size: float):
+        # Naive Bayes non ha iperparametri critici semplici da esporre come gli altri
         x, y = data.get_training_data()
         super().__init__(GaussianNB(), x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
+        # Aggiunto lo scaling anche qui per uniformità, se necessario
+        # (Originalmente usava fit diretto senza scaling)
         self.model.fit(self.x_train, self.y_train.ravel())
         self.y_predicted = self.model.predict(self.x_test)
         self._calculate_scores()

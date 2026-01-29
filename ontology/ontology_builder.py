@@ -1,4 +1,9 @@
-from owlready2 import get_ontology, Thing, DataProperty, ConstrainedDatatype
+import os
+from owlready2 import get_ontology, Thing, DataProperty, ConstrainedDatatype, Imp
+
+# Definiamo il percorso assoluto per salvare il file nella cartella 'ontology'
+base_path = os.path.dirname(os.path.abspath(__file__)) # Cartella dove si trova questo script
+output_path = os.path.join(base_path, "water_quality.owl")
 
 # 1. Crea l'ontologia
 onto = get_ontology("http://test.org/water_quality.owl")
@@ -13,81 +18,91 @@ with onto:
         """Un parametro chimico-fisico dell'acqua"""
         pass
 
-    # --- 2. DATA PROPERTIES (Le "colonne" del tuo dataset in OWL) ---
+    # --- 2. DATA PROPERTIES ---
     class descrizione_parametro(DataProperty):
-        """Descrizione testuale del parametro (per la documentazione)"""
         domain = [Parameter]
         range = [str]
 
-    # 1. NUOVA PROPRIETÀ: Definiamo che un WaterSample può avere un valore di pH
     class has_ph_value(DataProperty):
         domain = [WaterSample]
         range = [float]
 
-    # Proprietà per i Solfati
     class has_sulfate_value(DataProperty):
         domain = [WaterSample]
         range = [float]
 
-    # Proprietà per la Torbidità
     class has_turbidity_value(DataProperty):
         domain = [WaterSample]
         range = [float]
 
-    # --- 3. CLASSI DEFINITE (Il "Motore Logico") ---
-    # Classe A: Acqua Acida (pH < 6.5)
+    class CorrosiveWater(WaterSample):
+        """Classe dedotta dalla regola SWRL"""
+        pass
+
+    # --- REGOLA SWRL ---
+    # "Se pH < 6.0 E Solfati > 200.0 -> CorrosiveWater"
+    # --- REGOLA SWRL ---
+    # CORREZIONE: Rimuovere "swrlb:" e usare direttamente "lessThan" / "greaterThan"
+    rule = Imp()
+    rule.set_as_rule("""
+        WaterSample(?w), 
+        has_ph_value(?w, ?p), lessThan(?p, 6.0), 
+        has_sulfate_value(?w, ?s), greaterThan(?s, 200.0) 
+        -> CorrosiveWater(?w)
+    """)
+
+    # --- 3. CLASSI DEFINITE ---
     class AcidicWater(WaterSample):
         equivalent_to = [WaterSample & has_ph_value.some(ConstrainedDatatype(float, max_exclusive=6.5))]
 
-    # Classe B: Acqua con Solfati Alti (Sulfate > 250 - soglia WHO)
     class HighSulfateWater(WaterSample):
         equivalent_to = [WaterSample & has_sulfate_value.some(ConstrainedDatatype(float, min_exclusive=250.0))]
 
-    # Classe C: Acqua Torbida (Turbidity > 5.0 - soglia WHO)
     class TurbidWater(WaterSample):
         equivalent_to = [WaterSample & has_turbidity_value.some(ConstrainedDatatype(float, min_exclusive=5.0))]
 
-    # --- 4. LA CLASSE "UNSAFE" (Unione Logica) ---
-    # Qui diciamo: "L'acqua NON sicura è quella che è Acida OPPURE ha Solfati Alti OPPURE è Torbida"
-    # L'operatore "|" in owlready2 rappresenta l'OR logico (Union)
+    # --- 4. CLASSE UNSAFE ---
     class UnsafeWater(WaterSample):
         equivalent_to = [AcidicWater | HighSulfateWater | TurbidWater]
 
-    # 4. Creazione degli Individui (i parametri del CSV)
-    # Creiamo le istanze esatte che il tuo codice water_ontology.py si aspetta
+    
 
+    # --- 5. CREAZIONE INDIVIDUI (Parametri) ---
     ph = Parameter("ph")
     ph.descrizione_parametro = ["Indica quanto l'acqua è acida o basica. Range sicuro WHO: 6.5 - 8.5."]
 
     hardness = Parameter("Hardness")
-    hardness.descrizione_parametro = ["Causata da sali di calcio e magnesio. Influenza la capacità di sciogliere sapone."]
+    hardness.descrizione_parametro = ["Causata da sali di calcio e magnesio."]
 
-    solids = Parameter("Solids") # Sarebbe il TDS
-    solids.descrizione_parametro = ["Totale solidi disciolti (minerali, sali, metalli). Limite desiderabile: 500 mg/l."]
+    solids = Parameter("Solids") 
+    solids.descrizione_parametro = ["Totale solidi disciolti (minerali, sali). Limite: 1000 mg/l."]
 
     chloramines = Parameter("Chloramines")
-    chloramines.descrizione_parametro = ["Disinfettanti usati nei sistemi idrici pubblici. Livelli sicuri fino a 4 mg/L."]
+    chloramines.descrizione_parametro = ["Disinfettanti usati nei sistemi idrici."]
 
     sulfate = Parameter("Sulfate")
-    sulfate.descrizione_parametro = ["Sostanza naturale trovata in minerali. Alte concentrazioni possono alterare il gusto."]
+    sulfate.descrizione_parametro = ["Sostanza naturale. Alte concentrazioni alterano il gusto."]
 
     conductivity = Parameter("Conductivity")
-    conductivity.descrizione_parametro = ["Misura la capacità dell'acqua di condurre corrente elettrica, legata ai minerali disciolti."]
+    conductivity.descrizione_parametro = ["Conducibilità elettrica legata ai minerali disciolti."]
 
     organic_carbon = Parameter("Organic_carbon")
-    organic_carbon.descrizione_parametro = ["Misura della quantità totale di carbonio nei composti organici."]
+    organic_carbon.descrizione_parametro = ["Quantità totale di carbonio organico."]
 
     trihalomethanes = Parameter("Trihalomethanes")
-    trihalomethanes.descrizione_parametro = ["Sottoprodotti chimici della clorazione. Livelli sicuri fino a 80 ppm."]
+    trihalomethanes.descrizione_parametro = ["Sottoprodotti della clorazione."]
 
     turbidity = Parameter("Turbidity")
-    turbidity.descrizione_parametro = ["Misura della nuvolosità dell'acqua dovuta a particelle sospese. WHO raccomanda < 5.00 NTU."]
+    turbidity.descrizione_parametro = ["Nuvolosità dell'acqua. WHO raccomanda < 5.0 NTU."]
     
-    # Istanza speciale per il risultato finale
     potability_status = Parameter("PotabilityStatus")
-    potability_status.descrizione_parametro = ["Indica se l'acqua è sicura per il consumo umano (1) o no (0)."]
-        
-# 5. Salvataggio del file .owl
-output_file = "water_quality.owl"
-onto.save(file=output_file)
-print(f"Successo! Ontologia salvata come '{output_file}'. Ora puoi procedere con l'expert.")
+    potability_status.descrizione_parametro = ["Indica se l'acqua è sicura (1) o no (0)."]
+
+# 6. SALVATAGGIO
+try:
+    if os.path.exists(output_path):
+        os.remove(output_path) # Rimuove la vecchia versione per sicurezza
+    onto.save(file=output_path)
+    print(f"✅ Ontologia generata correttamente in: {output_path}")
+except Exception as e:
+    print(f"❌ Errore durante il salvataggio: {e}")

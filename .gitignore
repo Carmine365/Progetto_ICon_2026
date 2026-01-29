@@ -2,9 +2,4 @@ venv/
 .venv/
 env/
 
-.__pycache__/
-__pycache__/
-*.pyc
-*.pyc
-/src
-src/__pycache__/data_loader.cpython-311.pyc
+/src/__pycache__
