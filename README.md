@@ -7,7 +7,7 @@
 ![Ontology](https://img.shields.io/badge/OWL-Protégé-red?style=for-the-badge)
 
 **Corso:** Ingegneria della Conoscenza (ICon) - Università degli Studi di Bari Aldo Moro  
-**Anno Accademico:** 2022/2023
+**Anno Accademico:** 2025/2026
 
 ---
 
@@ -33,6 +33,9 @@ Questo progetto implementa un **Sistema di Supporto alle Decisioni (DSS)** per l
 
 1.  **Approccio Data-Driven (Machine Learning):** Analisi statistica e predittiva su dataset storici per classificare rapidamente la potabilità.
 2.  **Approccio Knowledge-Based (Sistema Esperto):** Ragionamento simbolico basato su regole esplicite (standard WHO) e ontologie per validare i risultati e gestire casi critici (es. contaminazione chimica).
+3.  **Ontologia OWL**  Modella concetti del dominio (campioni e condizioni di rischio) usata per recuperare descrizioni dei parametri, e per eseguire un controllo semantico con reasoner su classi definite
+4.  **CSP Scheduler (Constraint Satisfaction Problem)** In caso di problemi rilevati, il sistema può attivare un CSP per suggerire una assegnazione operativa **(staff, day, shift)** coerente con il tipo di issue
+5.  **Interfaccia Streamlit + Modello Bayesiano**  È presente una UI Streamlit e un modulo bayesiano per stimare probabilità/indicatori di rischio
 
 Il sistema include anche un modulo **CSP (Constraint Satisfaction Problem)** per l'ottimizzazione della pianificazione dei turni nei laboratori di analisi.
 
@@ -41,30 +44,26 @@ Il sistema include anche un modulo **CSP (Constraint Satisfaction Problem)** per
 ## 📂 Struttura del Progetto
 
 ```text
-WATER_QUALITY_PROJECT/
-│
-├── data/                       # Dataset CSV
-│   └── water_potability.csv
-│
-├── ontology/                   # Base di Conoscenza
-│   └── water_quality.owl       # File OWL (Protégé)
-│
-├── src/                        # Codice Sorgente
-│   ├── data_loader.py          # Pre-processing e caricamento dati
-│   ├── expert_system.py        # Agente intelligente (Experta)
-│   ├── ml_models.py            # Classificatori ML (LogReg, DT, KNN)
-│   ├── ml_evaluation.py        # Metriche e grafici comparativi
-│   ├── ontology_manager.py     # Interfaccia Python-OWL
-│   └── scheduler.py            # Risolutore CSP per i laboratori
-│
-├── docs/                       # Documentazione
-│   └── Relazione_Icon.pdf
-│
-├── main_ml.py                  # Entry point: Analisi Machine Learning
-├── main_expert.py              # Entry point: Sistema Esperto Interattivo
-├── requirements.txt            # Dipendenze
-└── README.md                   # Questo file
-
+├── docs/
+│   └── documentazione.md
+├── images/
+│   ├── architettura_sistema.png
+│   └── ...
+├── ontology/
+│   ├── water_quality.owl
+│   └── ontology_builder.py
+├── src/
+│   ├── bayesian_model.py
+│   ├── data_loader.py
+│   ├── expert_system.py
+│   ├── ml_models.py
+│   ├── ml_evaluation.py
+│   ├── ontology_manager.py
+│   └── scheduler.py
+├── app.py
+├── main_ml.py
+├── main_expert.py
+...
 ```
 
 ---
@@ -91,6 +90,41 @@ Un agente intelligente implementato con la libreria `experta` (basata sull'algor
 * **Knowledge Base:** Ontologia OWL gestita tramite `Owlready2` che definisce la semantica dei parametri (es. `WaterSample`, `ChemicalParameter`).
 * **Regole WHO:** Implementazione di soglie rigide di sicurezza (es. `IF pH < 6.5 THEN Non-Potabile`).
 * **CSP Scheduler:** Utilizzo di `python-constraint` per allocare le analisi di laboratorio rispettando vincoli di orario e disponibilità dei tecnici.
+
+### 3. Modulo Ontologia OWL (Semantica + Reasoner opzionale)
+
+Strato semantico che modella formalmente il dominio (campione d’acqua, parametri e classi di rischio) e abilita inferenza automatica quando disponibile un reasoner.
+
+* **Classi/concetti principali:** `WaterSample`, `AcidicWater`, `BasicWater`, `HighSulfateWater`, `TurbidWater`, `UnsafeWater`, `CorrosiveWater`.
+* **Data Properties:** `has_ph_value`, `has_sulfate_value`, `has_turbidity_value`.
+* **Integrazione nel codice:** `src/ontology_manager.py`
+  * recupera descrizioni dei parametri (es. `get_parameter_description`);
+  * prova ad attivare il reasoner con `sync_reasoner_pellet()` (con **fallback** se non disponibile);
+  * esegue un controllo semantico **opzionale** focalizzato su `CorrosiveWater` (solo se il reasoner è attivo).
+
+---
+
+### 4. Modulo CSP Scheduler (Pianificazione a Vincoli)
+
+Modulo operativo che traduce la diagnosi simbolica in una decisione di pianificazione, risolvendo un problema di assegnazione come CSP.
+
+* **Output:** una terna **(staff, day, shift)** in base a `issue_type` (`chemical`, `physical`, `critical`).
+* **Logica:**
+  * filtra a priori il dominio dello **staff** in base alla tipologia di problema;
+  * applica vincoli di disponibilità/turnazione e compatibilità;
+  * restituisce una soluzione valida al KBS, che la presenta come suggerimento operativo.
+
+---
+
+### 5. Interfaccia Streamlit + Modello Bayesiano
+
+Componente applicativa per l’utilizzo interattivo del sistema e per stimare indicatori probabilistici tramite una rete bayesiana.
+
+* **UI:** `app.py` (avvio dell’interfaccia Streamlit).
+* **Bayesian Model:** `src/bayesian_model.py`
+  * implementa una **rete bayesiana** (libreria `pgmpy`);
+  * stima probabilità/indicatori coerentemente con la struttura e le query definite nel codice.
+
 
 ---
 
@@ -144,7 +178,3 @@ python main_expert.py
 
 
 *Powered by Python, Scikit-Learn, Experta & Owlready2.*
-
-```
-
-```
