@@ -119,5 +119,54 @@ class waterOntology:
             
         return is_corrosive
 
+    def get_threshold(self, class_name, property_name, default_value):
+        """
+        Cerca nella definizione della classe OWL una restrizione numerica.
+        Supporta 'is_a', 'equivalent_to' e intersezioni logiche (&).
+        """
+        if not self.ontology:
+            return default_value
+
+        try:
+            # 1. Trova la classe
+            owl_class = self.ontology.search_one(iri=f"*{class_name}")
+            if not owl_class:
+                return default_value
+
+            # 2. Crea una lista di definizioni da ispezionare (is_a + equivalent_to)
+            definitions = list(owl_class.is_a) + list(owl_class.equivalent_to)
+
+            for restriction in definitions:
+                # Caso A: La restrizione è diretta (es. has_ph_value some ...)
+                # Caso B: La restrizione è in un'intersezione (es. WaterSample & has_ph_value some ...)
+                
+                # Se è un'intersezione (AND), owlready2 ha l'attributo 'Classes'
+                targets = [restriction]
+                if hasattr(restriction, "Classes"):
+                    targets = restriction.Classes
+
+                # Controlliamo ogni componente
+                for target in targets:
+                    if hasattr(target, "property") and hasattr(target, "value"):
+                        
+                        if target.property.name == property_name:
+                            val = target.value
+                            
+                            # Estrazione valore (float semplice)
+                            if isinstance(val, (int, float)):
+                                return float(val)
+                                
+                            # Estrazione valore (ConstrainedDatatype es. < 6.5)
+                            if hasattr(val, "max_exclusive"): return float(val.max_exclusive)
+                            if hasattr(val, "min_exclusive"): return float(val.min_exclusive)
+                            if hasattr(val, "max_inclusive"): return float(val.max_inclusive)
+                            if hasattr(val, "min_inclusive"): return float(val.min_inclusive)
+
+        except Exception as e:
+            print(f"[WARN] Impossibile estrarre soglia per {class_name}: {e}")
+        
+        # Se non troviamo nulla, torniamo il default
+        return default_value
+
 # Istanza globale
 manager = waterOntology()

@@ -2,6 +2,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
                              confusion_matrix, f1_score, precision_score,
                              recall_score, roc_curve, auc)
@@ -12,6 +13,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline     
 import matplotlib.pyplot as plt
 import numpy as np
+from typing import Optional
 
 # Import relativo per il package src
 from .data_loader import waterData 
@@ -46,8 +48,13 @@ class waterModel:
     def get_y(self):
         return self.y
 
-    def get_metric(self, score_label: str):
-        """Restituisce il valore di una metrica specifica dal dizionario scores"""
+    def get_metric(self, score_label: Optional[str] = None):
+        """
+        Restituisce una metrica specifica se specificata, 
+        ALTRIMENTI restituisce l'intero dizionario scores.
+        """
+        if score_label is None:
+            return self.scores
         return self.scores.get(score_label)
 
     def print_metrics(self):
@@ -58,10 +65,11 @@ class waterModel:
               f"F1: {self.scores.get('F1_precision', 0):.4f}")
 
     def get_roc_curve(self):
-        """Genera e mostra la curva ROC se il modello supporta le probabilità"""
-        if hasattr(self.model, "predict_proba") and self.x_test is not None and self.y_test is not None:
+        # Supporto Pipeline: estrae l'ultimo step
+        estimator = self.model.steps[-1][1] if isinstance(self.model, Pipeline) else self.model
+
+        if hasattr(estimator, "predict_proba") and self.x_test is not None and self.y_test is not None:
             try:
-                # Calcola le probabilità della classe positiva (1)
                 y_probs = self.model.predict_proba(self.x_test)[:, 1]
                 fpr, tpr, _ = roc_curve(self.y_test, y_probs)
                 roc_auc = auc(fpr, tpr)
@@ -80,15 +88,26 @@ class waterModel:
             except Exception as e:
                 print(f"       [Warning] Impossibile generare ROC: {e}")
         else:
-            print(f"       [Info] Il modello {self.__class__.__name__} non supporta la curva ROC (manca predict_proba).")
+            print(f"       [Info] Il modello {self.__class__.__name__} non supporta la curva ROC.")
 
     def get_confusion_matrix(self):
         if self.y_test is not None and self.y_predicted is not None:
             cm = confusion_matrix(self.y_test, self.y_predicted)
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-            disp.plot(cmap="Blues")
-            plt.title(f'Confusion Matrix - {self.__class__.__name__}')
-            plt.show()
+            
+            # Se usato da script (main_ml.py), mostra il grafico
+            # Nota: Per Streamlit è meglio non usare plt.show() qui, ma restituire cm
+            try:
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+                disp.plot(cmap="Blues")
+                plt.title(f'Confusion Matrix - {self.__class__.__name__}')
+                plt.show()
+            except:
+                pass # Evita errori se non c'è display grafico
+            
+            return cm  # <--- AGGIUNGI QUESTO RETURN
+        else:
+            print("Dati non pronti (cm is None)") # Questo spiega il messaggio che vedi
+            return None
 
     def evaluate_with_cross_validation(self, folds=10):
         """
@@ -148,7 +167,7 @@ class waterLogReg(waterModel):
         pipeline = Pipeline([
             ('imputer', SimpleImputer(strategy='mean')), # Gestisce i NaN
             ('scaler', StandardScaler()),                # Normalizza
-            ('clf', LogisticRegression(max_iter=max_iter))
+            ('clf', LogisticRegression(max_iter=max_iter, class_weight='balanced'))
         ])
         
         super().__init__(pipeline, x, y, {}, test_size)
