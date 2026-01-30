@@ -119,5 +119,55 @@ class waterOntology:
             
         return is_corrosive
 
+    def get_threshold(self, class_name, property_name, default_value):
+        """
+        Cerca nella definizione della classe OWL una restrizione numerica
+        (es. AcidicWater -> has_ph_value < 6.5) e restituisce il valore.
+        Se fallisce, restituisce il default_value (fallback).
+        """
+        if not self.ontology:
+            return default_value
+
+        try:
+            # 1. Trova la classe nell'ontologia (es. AcidicWater)
+            # Usiamo search_one con wildcard per evitare problemi di namespace
+            owl_class = self.ontology.search_one(iri=f"*{class_name}")
+            
+            if not owl_class:
+                return default_value
+
+            # 2. Itera sulle superclassi/restrizioni (is_a)
+            for restriction in owl_class.is_a:
+                # Controlliamo se è una restrizione (es. has_ph_value some float)
+                # In owlready2, le restrizioni hanno attributi 'property' e 'value'
+                if hasattr(restriction, "property") and hasattr(restriction, "value"):
+                    
+                    # Verifica che la proprietà sia quella cercata (es. has_ph_value)
+                    if restriction.property.name == property_name:
+                        
+                        # Estrazione del valore numerico. 
+                        # A volte owlready2 restituisce oggetti complessi, cerchiamo il float/int
+                        val = restriction.value
+                        
+                        # Gestione operatori (es. < 6.5 viene mappato dall'oggetto ConstrainedDatatype)
+                        # Per semplicità, in progetti base, spesso il valore è accessibile direttamente 
+                        # o tramite parsing testuale se è un tipo semplice.
+                        
+                        # TENTATIVO DIRETTO (funziona per restrizioni semplici 'some value')
+                        if isinstance(val, (int, float)):
+                            return float(val)
+                            
+                        # TENTATIVO AVANZATO (per facet restrictions come < 6.5)
+                        # Spesso owlready incapsula i range in oggetti ConstrainedDatatype
+                        if hasattr(val, "max_exclusive"): return float(val.max_exclusive)
+                        if hasattr(val, "min_exclusive"): return float(val.min_exclusive)
+                        if hasattr(val, "max_inclusive"): return float(val.max_inclusive)
+                        if hasattr(val, "min_inclusive"): return float(val.min_inclusive)
+
+        except Exception as e:
+            print(f"[WARN] Impossibile estrarre soglia per {class_name}: {e}")
+        
+        return default_value
+
 # Istanza globale
 manager = waterOntology()
