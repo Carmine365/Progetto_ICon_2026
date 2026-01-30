@@ -59,6 +59,9 @@
   - [3.7 Complessità, robustezza ed estendibilità](#37-complessità-robustezza-ed-estendibilità)
   - [3.8 Limiti del KBS e possibili miglioramenti](#38-limiti-del-kbs-e-possibili-miglioramenti)
   - [3.9 Interfaccia Grafica del sistema esperto (UI)](#39-interfaccia-grafica-del-sistema-esperto-ui))
+    - [3.9.1 Caso normale con acqua potabile](#391-caso-normale-con-acqua-potabile)
+    - [3.9.2 Caso di anomalia chimica](#392-caso-di-anomalia-chimica)
+    - [3.9.3 Caso critico](#393-caso-critico)
 
 - [4. Ontologia OWL: supporto semantico e inferenza opzionale](#4-ontologia-owl-supporto-semantico-e-inferenza-opzionale)
   - [4.1 Ruolo dell’ontologia: modello concettuale e classificazione semantica](#41-ruolo-dellontologia-modello-concettuale-e-classificazione-semantica)
@@ -103,33 +106,41 @@
   - [5.10 Estensioni possibili](#510-estensioni-possibili)
   - [5.11 Considerazioni finali sul modulo CSP](#511-considerazioni-finali-sul-modulo-csp)
 
-- [6. Apprendimento Automatico (ML): modelli, parametri e valutazione](#6-apprendimento-automatico-ml-modelli-parametri-e-valutazione)
-  - [6.1 Ruolo del modulo ML nel progetto](#61-ruolo-del-modulo-ml-nel-progetto)
-  - [6.2 Dataset utilizzato](#62-dataset-utilizzato)
-    - [6.2.1 Descrizione del dataset](#621-descrizione-del-dataset)
-    - [6.2.2 Preprocessing dei dati](#622-preprocessing-dei-dati)
-  - [6.3 Modelli implementati](#63-modelli-implementati)
-    - [6.3.1 Logistic Regression](#631-logistic-regression)
-    - [6.3.2 Decision Tree](#632-decision-tree)
-    - [6.3.3 K-Nearest Neighbors (KNN)](#633-k-nearest-neighbors-knn)
-    - [6.3.4 Multi-Layer Perceptron (MLP)](#634-multi-layer-perceptron-mlp)
-    - [6.3.5 Gaussian Naive Bayes](#635-gaussian-naive-bayes)
-  - [6.4 Scelte sugli iperparametri](#64-scelte-sugli-iperparametri)
-  - [6.5 Protocollo di valutazione (punto cruciale)](#65-protocollo-di-valutazione-punto-cruciale)
-    - [6.5.1 Motivazione del protocollo](#651-motivazione-del-protocollo)
-    - [6.5.2 Cross-Validation](#652-cross-validation)
-    - [6.5.3 Metriche utilizzate](#653-metriche-utilizzate)
-  - [6.6 Valutazione sperimentale rigorosa](#66-valutazione-sperimentale-rigorosa)
-    - [6.6.1 Risultati della Cross-Validation (mean ± std)](#661-risultati-della-cross-validation-mean--std)
-    - [6.6.2 Nota su valutazioni “single split”](#662-nota-su-valutazioni-single-split)
-  - [6.7 Analisi critica: ML vs approccio simbolico (KBS)](#67-analisi-critica-ml-vs-approccio-simbolico-kbs)
-  - [6.8 Confronto concettuale KBS vs ML](#68-confronto-concettuale-kbs-vs-ml)
-  - [6.9 Limiti e possibili estensioni del modulo ML](#69-limiti-e-possibili-estensioni-del-modulo-ml)
-    - [6.9.1 Limiti](#691-limiti)
-    - [6.9.2 Estensioni possibili](#692-estensioni-possibili)
-  - [6.10 Considerazioni finali sul modulo ML](#610-considerazioni-finali-sul-modulo-ml)
+- [6. Modulo di Ragionamento Probabilistico](#6-modulo-di-ragionamento-probabilistico)
+  - [6.1 Scelta Progettuale e Ruolo](#61-scelta-progettuale-e-ruolo)
+  - [6.2 Topologia della Rete (Modellazione)](#62-topologia-della-rete-(modellazione))
+  - [6.3 Configurazione delle Probabilità (CPT)](#63-configurazione-delle-probabilita-(CPT))
+  - [6.4 Integrazione nell'Interfaccia](#64-integrazione-nell'-interfaccia)
 
-- [7. Conclusioni](#7-conclusioni)
+- [7. Apprendimento Automatico (ML): modelli, parametri e valutazione](#7-apprendimento-automatico-ml-modelli-parametri-e-valutazione)
+  - [7.1 Ruolo del modulo ML nel progetto](#71-ruolo-del-modulo-ml-nel-progetto)
+  - [7.2 Dataset utilizzato](#72-dataset-utilizzato)
+    - [7.2.1 Descrizione del dataset](#721-descrizione-del-dataset)
+    - [7.2.2 Preprocessing dei dati](#722-preprocessing-dei-dati)
+  - [7.3 Modelli implementati](#73-modelli-implementati)
+    - [7.3.1 Logistic Regression](#731-logistic-regression)
+    - [7.3.2 Decision Tree](#732-decision-tree)
+    - [7.3.3 K-Nearest Neighbors (KNN)](#733-k-nearest-neighbors-knn)
+    - [7.3.4 Multi-Layer Perceptron (MLP)](#734-multi-layer-perceptron-mlp)
+    - [7.3.5 Gaussian Naive Bayes](#735-gaussian-naive-bayes)
+  - [7.4 Scelte sugli iperparametri](#74-scelte-sugli-iperparametri)
+  - [7.5 Protocollo di valutazione (punto cruciale)](#75-protocollo-di-valutazione-punto-cruciale)
+    - [7.5.1 Motivazione del protocollo](#751-motivazione-del-protocollo)
+    - [7.5.2 Cross-Validation](#752-cross-validation)
+    - [7.5.3 Metriche utilizzate](#753-metriche-utilizzate)
+  - [7.6 Valutazione sperimentale rigorosa](#76-valutazione-sperimentale-rigorosa)
+    - [7.6.1 Risultati della Cross-Validation (mean ± std)](#761-risultati-della-cross-validation-mean--std)
+    - [7.6.2 Nota su valutazioni “single split”](#762-nota-su-valutazioni-single-split)
+    - [7.6.3 Analisi critica dello sbilanciamento e performance dell'MLP](#763-analisi-critica-dello-sbilanciamento-e-performance-dell'-MLP)
+  - [7.7 Analisi critica: ML vs approccio simbolico (KBS)](#77-analisi-critica-ml-vs-approccio-simbolico-kbs)
+  - [7.8 Confronto concettuale KBS vs ML](#78-confronto-concettuale-kbs-vs-ml)
+  - [7.9 Limiti e possibili estensioni del modulo ML](#79-limiti-e-possibili-estensioni-del-modulo-ml)
+    - [7.9.1 Limiti](#791-limiti)
+    - [7.9.2 Estensioni possibili](#792-estensioni-possibili)
+  - [7.10 Considerazioni finali sul modulo ML](710-considerazioni-finali-sul-modulo-ml)
+
+- [8. Conclusioni](#8-conclusioni)
+  - [8.1 Sviluppi Futuri](#81-sviluppi-futuri)
 
 ---
 
@@ -190,6 +201,10 @@ Il CSP filtra il dominio del personale in base al tipo di problema e applica vin
 - **Entrypoint**: `main_ml.py`  
   Avvia la pipeline di training/valutazione.
 
+---
+
+### Ragionamento Probabilistico
+**File principale**: `src/bayesian_model.py` Implementa la classe `WaterQualityBN` che definisce la struttura della rete (nodi e archi), le CPT e i metodi di inferenza (`get_inference`).
 
 ---
 
@@ -413,9 +428,12 @@ Il sistema è organizzato secondo un’architettura **modulare e stratificata**,
 - **Strato semantico** → Ontologia OWL  
 - **Strato decisionale operativo** → CSP / Scheduler  
 - **Strato predittivo/statistico** → Modulo ML  
+- **Strato Probabilistico** → Rete Bayesiana (gestione incertezza)
 
 ![Diagramma dell'Architettura del Sistema Ibrido](images/architettura_sistema.png)
 *Figura 1: Schema dell'architettura ibrida implementata. Le frecce indicano il flusso dei dati e delle decisioni tra i moduli KBS, Ontologia, CSP e ML.*
+
+**Nota**: Per semplicità grafica, il diagramma omette i moduli di supporto decisionale collaterali (Rete Bayesiana e Scheduler CSP), che non elaborano il flusso dati dei sensori ma vengono attivati su richiesta dell'utente tramite interfaccia.
 
 Questi strati non sono isolati: comunicano tramite interfacce semplici e ben definite, ma restano **concettualmente separati**, così da:
 - migliorare la leggibilità del progetto;
@@ -795,6 +813,46 @@ L’utente inserisce i parametri del campione tramite i campi dell’interfaccia
 e avvia l’analisi con un’azione esplicita.
 La UI invoca il motore inferenziale del KBS e visualizza l’esito finale
 dell’analisi, evidenziando eventuali anomalie o condizioni critiche.
+
+L'interfaccia grafica è stata progettata per garantire la **piena parità funzionale** con la CLI: permette infatti l'inserimento non solo dei parametri numerici, ma anche delle evidenze qualitative (osservazioni visive e olfattive), le quali vengono iniettate nel motore inferenziale per attivare le regole di controllo e i warning specifici (es. contaminazione batterica da cattivo odore).
+
+#### Organizzazione Modulare dell'Interfaccia
+L'applicazione è stata sviluppata utilizzando il framework **Streamlit**, che funge da *front-end* unificato per tutti i moduli del progetto. L'architettura della GUI è organizzata in quattro aree funzionali (Tab), progettate per coprire l'intero ciclo di vita dell'analisi dei dati:
+
+**1. 📊 Analisi Esplorativa (EDA)**
+Questa scheda è dedicata alla comprensione preliminare del dataset.
+* **Visualizzazione Distribuzioni:** Istogrammi interattivi per analizzare la varianza e il range di valori di ogni parametro (es. pH, Solfati).
+* **Analisi delle Correlazioni:** Una *Heatmap* (matrice di correlazione) permette di identificare visivamente le dipendenze lineari tra le variabili, utile per comprendere quali fattori influenzano maggiormente la potabilità.
+* **Pairplot:** Grafici a dispersione per individuare cluster o separazioni nette tra le classi `Potable` e `Not Potable`.
+![Screenshot Analisi Esplorativa](images/gui_eda.png)
+
+**2. 🤖 Modelli ML**
+Una dashboard di valutazione comparativa per i modelli di Machine Learning addestrati.
+* **Selezione Modello:** L'utente può scegliere tra *Decision Tree*, *KNN*, *Logistic Regression*, *Naive Bayes* e *MLP*.
+* **Metriche di Performance:** Visualizzazione immediata di Accuracy, Precision, Recall e F1-Score sul Test Set.
+* **Matrice di Confusione:** Plot grafico (tramite `seaborn`/`matplotlib`) per analizzare i falsi positivi e negativi, fondamentale per valutare la sicurezza del modello in un contesto sanitario.
+![Screenshot Dashboard ML](images/gui_ml.png)
+
+**3. 🧪 Sistema Esperto (KBS)**
+Il cuore "simbolico" del progetto.
+* **Input Ibrido:** Form per l'inserimento sia dei dati strumentali (slider numerici) sia delle evidenze qualitative (checkbox per odore, colore, sapore).
+* **Feedback in Tempo Reale:** Il sistema notifica all'utente eventuali incongruenze (es. "Acqua torbida" ma valore NTU basso) grazie alle regole di coerenza definite nella classe base.
+* **Diagnosi Ontologica:** L'output finale riporta non solo l'esito (Sicura/Non Sicura) ma anche i suggerimenti di trattamento derivati dalla Knowledge Base.
+![Screenshot Sistema Esperto](images/gui_expert.png)
+
+**4. 🔮 Rete Bayesiana**
+Un modulo dedicato al **ragionamento in condizioni di incertezza**.
+* A differenza del sistema esperto (deterministico), qui l'utente può inserire evidenze parziali o incerte (es. "Forte presenza di pesticidi").
+* Il sistema calcola e aggiorna dinamicamente la **probabilità a posteriori** della potabilità, mostrando come ogni nuova evidenza influenzi la fiducia nella diagnosi finale.
+![Screenshot Rete Bayesiana](images/gui_bayes.png)
+
+**5. 🛠️ Gestione Turni (CSP)**
+Un modulo operativo che risolve un **Constraint Satisfaction Problem (CSP)**.
+In caso di emergenza o manutenzione ordinaria, questo tab interfaccia lo *scheduler* (basato su algoritmi di ricerca o librerie di vincoli) per assegnare automaticamente i turni alla squadra di manutenzione, ottimizzando la copertura e rispettando i vincoli di disponibilità degli operatori.
+*(Inserire qui screenshot del Tab 5)*
+![Screenshot Gestione Turni](images/gui_csp.png)
+
+Questa struttura a "Dashboard Unificata" dimostra l'integrazione efficace tra i diversi paradigmi dell'Ingegneria della Conoscenza (Simbolico, Connessionista e Probabilistico) in un unico strumento interattivo.
 
 ### 3.9.1 Caso normale con acqua potabile
 
@@ -1323,7 +1381,38 @@ Pur nella sua semplicità, rappresenta un elemento chiave per trasformare il sis
 
 ---
 
-# 6. Apprendimento Automatico (ML): modelli, parametri e valutazione
+# 6. Modulo di Ragionamento Probabilistico
+
+Il sistema integra un modulo di ragionamento probabilistico (`src/bayesian_model.py`) per gestire situazioni di incertezza informativa, colmando i limiti del sistema a regole (KBS) che richiede dati esatti.
+
+## 6.1 Scelta Progettuale e Ruolo
+La decisione di affiancare una Rete Bayesiana al sistema esperto nasce dalla necessità di modellare l'impatto di **fattori ambientali esogeni** (non misurabili dai sensori chimici) sulla qualità dell'acqua.
+Mentre il KBS valuta il campione attuale (es. "pH=7.2"), il modulo Bayesiano stima il **rischio a priori** basandosi su evidenze contestuali inserite dall'operatore (es. "Forti piogge recenti", "Presenza industrie").
+
+## 6.2 Topologia della Rete (Modellazione)
+La struttura della rete è stata definita manualmente (Expert Knowledge) per riflettere le relazioni causali del dominio idrico.
+I nodi implementati nel grafo (`WaterQualityBN`) sono:
+
+1.  **Nodi Radice (Fattori di Rischio):**
+    * `Rainfall` (Piogge intense): Aumenta la probabilità di torbidità e runoff agricolo.
+    * `IndustrialActivity`: Introduce rischio di inquinanti chimici.
+    * `AgriculturalRunoff`: Introduce rischio di pesticidi/nitrati.
+2.  **Nodi Intermedi (Effetti Latenti):**
+    * `ChemicalPollution`: Aggrega i rischi industriali e agricoli.
+    * `BiologicalContamination`: Derivata da fattori organici.
+3.  **Nodo Target:**
+    * `WaterQuality`: Variabile binaria (Safe/Unsafe) la cui probabilità è condizionata dai nodi padre.
+
+## 6.3 Configurazione delle Probabilità (CPT)
+Le Tabelle delle Probabilità Condizionate (CPT) non sono state apprese dai dati (learning) a causa della mancanza di un dataset storico annotato con eventi metereologici, ma sono state **parametrizzate a mano** seguendo logiche conservative di sicurezza.
+*Esempio di configurazione:* È stata assegnata una probabilità alta di `Unsafe` (0.8) nel caso in cui siano presenti contemporaneamente `IndustrialActivity=True` e `Rainfall=Heavy`.
+
+## 6.4 Integrazione nell'Interfaccia
+Il modulo espone un metodo di inferenza che accetta "evidenze parziali" (es. so solo che piove, ma non so se ci sono industrie). L'interfaccia grafica (Tab 4) permette di impostare queste evidenze e visualizzare in tempo reale l'aggiornamento della credenza (Belief Update) sulla potabilità, offrendo un supporto decisionale anche in assenza di analisi chimiche complete.
+
+---
+
+# 7. Apprendimento Automatico (ML): modelli, parametri e valutazione
 
 Questa sezione descrive in modo dettagliato la **componente di apprendimento automatico supervisionato** del progetto, facendo riferimento esplicito ai file presenti nello ZIP e seguendo rigorosamente le linee guida dell’insegnamento, in particolare per quanto riguarda la **valutazione sperimentale**.
 
@@ -1340,7 +1429,7 @@ La componente ML è progettata come **modulo indipendente**, utilizzato per:
 
 ---
 
-## 6.1 Ruolo del modulo ML nel progetto
+## 7.1 Ruolo del modulo ML nel progetto
 
 Il modulo ML non sostituisce il KBS, ma lo **completa**.  
 Il suo ruolo è quello di:
@@ -1357,9 +1446,9 @@ La separazione tra KBS e ML è intenzionale e consente di:
 
 ---
 
-## 6.2 Dataset utilizzato
+## 7.2 Dataset utilizzato
 
-### 6.2.1 Descrizione del dataset
+### 7.2.1 Descrizione del dataset
 
 Il dataset utilizzato è:
 
@@ -1381,7 +1470,7 @@ Il dataset è ampiamente utilizzato come benchmark, ma nel progetto:
 
 ---
 
-### 6.2.2 Preprocessing dei dati
+### 7.2.2 Preprocessing dei dati
 
 Nel modulo ML vengono eseguite le seguenti operazioni:
 
@@ -1397,14 +1486,18 @@ Questa scelta riduce il rischio di:
 - leakage;
 - preprocessing eccessivo non giustificato.
 
+**Prevenzione del Data Leakage** Una scelta architetturale critica è stata l'inserimento del passaggio di imputazione (`SimpleImputer`) direttamente all'interno della Pipeline di `Scikit-Learn`, invece di effettuare una pulizia globale preliminare.
+
+Questo approccio garantisce che il calcolo dei valori sostitutivi (es. la media) avvenga **esclusivamente sui dati di Training** di ogni fold, senza mai "vedere" i dati di Test. Se avessimo calcolato la media sull'intero dataset prima dello split, avremmo introdotto un **Data Leakage** (contaminazione informativa), invalidando la correttezza scientifica della validazione. L'architettura a Pipeline assicura invece una valutazione rigorosa e priva di *bias*.
+
 ---
 
-## 6.3 Modelli implementati
+## 7.3 Modelli implementati
 
 I modelli sono definiti e gestiti in `src/ml_models.py`.  
 Il progetto implementa **più classificatori**, scelti per rappresentare approcci diversi.
 
-### 6.3.1 Logistic Regression
+### 7.3.1 Logistic Regression
 - Modello lineare, interpretabile.
 - Parametro rilevante:
   - `max_iter = 1000` (scelto per garantire convergenza).
@@ -1415,7 +1508,7 @@ Motivazione:
 
 ---
 
-### 6.3.2 Decision Tree
+### 7.3.2 Decision Tree
 - Modello non lineare basato su regole indotte dai dati.
 
 Motivazione:
@@ -1424,7 +1517,7 @@ Motivazione:
 
 ---
 
-### 6.3.3 K-Nearest Neighbors (KNN)
+### 7.3.3 K-Nearest Neighbors (KNN)
 - Modello instance-based.
 
 Parametro principale:
@@ -1436,7 +1529,7 @@ Motivazione:
 
 ---
 
-### 6.3.4 Multi-Layer Perceptron (MLP)
+### 7.3.4 Multi-Layer Perceptron (MLP)
 - Rete neurale feed-forward.
 
 Parametri rilevanti:
@@ -1449,7 +1542,7 @@ Motivazione:
 
 ---
 
-### 6.3.5 Gaussian Naive Bayes
+### 7.3.5 Gaussian Naive Bayes
 - Modello probabilistico con ipotesi di indipendenza condizionata.
 
 Motivazione:
@@ -1458,7 +1551,7 @@ Motivazione:
 
 ---
 
-## 6.4 Scelte sugli iperparametri
+## 7.4 Scelte sugli iperparametri
 
 Gli iperparametri sono scelti secondo criteri **pratici e conservativi**:
 
@@ -1472,9 +1565,9 @@ Questa scelta è coerente con l’obiettivo del progetto:
 
 ---
 
-## 6.5 Protocollo di valutazione (punto cruciale)
+## 7.5 Protocollo di valutazione (punto cruciale)
 
-### 6.5.1 Motivazione del protocollo
+### 7.5.1 Motivazione del protocollo
 
 Per evitare valutazioni fuorvianti basate su:
 - un singolo split train/test;
@@ -1486,7 +1579,7 @@ Questa scelta è in linea con le linee guida dell’insegnamento.
 
 ---
 
-### 6.5.2 Cross-Validation
+### 7.5.2 Cross-Validation
 
 Nel modulo `src/ml_models.py` la valutazione è effettuata con **10-fold cross-validation**.
 Per ciascun fold viene calcolata la metrica scelta e, come risultato finale, vengono riportati:
@@ -1500,7 +1593,7 @@ Questo consente di stimare:
 
 ---
 
-### 6.5.3 Metriche utilizzate
+### 7.5.3 Metriche utilizzate
 
 La metrica utilizzata per il confronto tra modelli è:
 
@@ -1514,7 +1607,7 @@ La scelta è motivata da:
 Metriche aggiuntive non vengono introdotte in questa valutazione comparativa per evitare ridondanza e mantenere la documentazione focalizzata sulle scelte realmente impiegate nel progetto.
 
 ---
-## 6.6 Valutazione sperimentale rigorosa
+## 7.6 Valutazione sperimentale rigorosa
 
 Per garantire la robustezza dei risultati ed evitare bias dovuti a una singola partizione dei dati, è stato adottato un protocollo di validazione basato su **10-fold cross-validation**.  
 L’obiettivo è ottenere una stima più affidabile delle prestazioni medie e della loro stabilità, riportando **media ± deviazione standard**. Per l’analisi qualitativa dettagliata 
@@ -1534,7 +1627,7 @@ mostra una migliore capacità di separazione tra le classi, come evidenziato
 dall’andamento della curva ROC, meno influenzata dallo sbilanciamento del dataset.*
 
 
-### 6.6.1 Risultati della Cross-Validation (mean ± std)
+### 7.6.1 Risultati della Cross-Validation (mean ± std)
 
 I valori riportati rappresentano la **media ± deviazione standard** dell’Accuracy sui 10 fold.  
 La deviazione standard ($\sigma$) è importante per valutare la stabilità del modello: un $\sigma$ basso indica prestazioni più consistenti al variare del fold.
@@ -1549,7 +1642,7 @@ La deviazione standard ($\sigma$) è importante per valutare la stabilità del m
 
 *(I valori numerici sono ottenuti eseguendo gli script in `main_ml.py`. Eventuali piccole variazioni tra run possono dipendere da componenti con casualità, se non viene fissato un `random_state`.)*
 
-### 6.6.2 Nota su valutazioni “single split” 
+### 7.6.2 Nota su valutazioni “single split” 
 
 Nel progetto possono essere presenti anche valutazioni su un singolo split train/test (ad es. matrice di confusione o classification report), ma queste sono da considerarsi **solo illustrative**.  
 Per il confronto tra modelli in questa documentazione si usano esclusivamente risultati **mediati in cross-validation** (mean ± std), in linea con le linee guida dell’insegnamento.
@@ -1565,7 +1658,7 @@ Per il confronto tra modelli in questa documentazione si usano esclusivamente ri
 caricamento del dataset, valutazione tramite cross-validation (10-fold) e
 generazione dei grafici di valutazione sul test set.*
 
-### 6.6.3 Analisi critica dello sbilanciamento e performance dell'MLP
+### 7.6.3 Analisi critica dello sbilanciamento e performance dell'MLP
 
 Il dataset presenta un moderato sbilanciamento tra le classi (circa 60% Non Potabile vs 40% Potabile). 
 Per la valutazione comparativa, si è scelto di mantenere la distribuzione naturale dei dati (senza forzare il bilanciamento su tutti i modelli), privilegiando l'**Accuracy** come metrica di riferimento globale. Tuttavia, per evitare l'Accuracy Paradox, i risultati sono stati validati osservando le Matrici di Confusione e le curve ROC.
@@ -1582,7 +1675,7 @@ In conclusione, per questo specifico dominio, l'approccio simbolico (Decision Tr
 
 ---
 
-## 6.7 Analisi critica: ML vs approccio simbolico (KBS)
+## 7.7 Analisi critica: ML vs approccio simbolico (KBS)
 
 I risultati della cross-validation mostrano che i modelli ML ottengono un’accuracy media intorno a ~0.60, con variabilità diversa a seconda dell’algoritmo (deviazione standard più o meno alta).
 
@@ -1608,7 +1701,7 @@ Nel progetto il ML è usato come **termine di confronto** e supporto statistico,
 
 ---
 
-## 6.8 Confronto concettuale KBS vs ML
+## 7.8 Confronto concettuale KBS vs ML
 
 | Aspetto            | KBS                          | ML                           |
 |--------------------|------------------------------|------------------------------|
@@ -1621,23 +1714,23 @@ Questo confronto giustifica la scelta di un sistema **ibrido**, anziché affidar
 
 ---
 
-## 6.9 Limiti e possibili estensioni del modulo ML
+## 7.9 Limiti e possibili estensioni del modulo ML
 
-### 6.9.1 Limiti
+### 7.9.1 Limiti
 - uso di un dataset standard;
 - assenza di tuning sistematico degli iperparametri;
 - metriche limitate all’accuracy.
 
 ---
 
-### 6.9.2 Estensioni possibili
+### 7.9.2 Estensioni possibili
 - tuning automatico (Grid Search);
 - introduzione di metriche aggiuntive (precision/recall);
 - integrazione più stretta con il KBS (es. suggerimento soglie).
 
 ---
 
-## 6.10 Considerazioni finali sul modulo ML
+## 7.10 Considerazioni finali sul modulo ML
 
 La componente ML:
 - è correttamente isolata e valutata;
@@ -1648,7 +1741,7 @@ La componente ML:
 Insieme al KBS, fornisce una visione completa e coerente del problema della valutazione della qualità dell’acqua.
 
 ---
-# 7. Conclusioni
+# 8. Conclusioni
 
 Il progetto ha portato alla realizzazione di un **sistema ibrido di Ingegneria della Conoscenza** per la valutazione della qualità dell’acqua, integrando in modo coerente i principali temi affrontati nel corso.
 
@@ -1679,3 +1772,19 @@ Nel complesso, il progetto dimostra la capacità di:
 - valutare criticamente il sistema e i suoi risultati.
 
 Il lavoro può essere considerato completo rispetto agli obiettivi del corso e, grazie alla struttura modulare adottata, rappresenta una base solida per eventuali estensioni future.
+
+## 8.1 Sviluppi Futuri
+
+Nonostante il sistema sia completamente operativo, sono state individuate alcune aree di miglioramento che potrebbero costituire l'oggetto di future iterazioni del progetto:
+
+1.  **Ottimizzazione Rete Neurale (MLP):**
+    Attualmente il modello MLP ha mostrato performance inferiori rispetto agli alberi decisionali a causa dello sbilanciamento delle classi. Uno sviluppo futuro prevede l'implementazione di una **Grid Search avanzata** per il tuning degli iperparametri e l'uso di tecniche di *Oversampling* (es. SMOTE) per migliorare la generalizzazione sulla classe minoritaria.
+
+2.  **Estensione del CSP (Soft Constraints):**
+    Il modulo di pianificazione turni attuale gestisce vincoli "duri" (obbligatori). L'evoluzione naturale prevede l'introduzione di **vincoli "soft"** (es. preferenze personali degli operatori, minimizzazione degli straordinari), trasformando il problema da semplice soddisfacimento (SAT) a ottimizzazione (MAX-SAT) per migliorare la qualità della vita lavorativa del team.
+
+3.  **Structure Learning Bayesiano:**
+    La Rete Bayesiana attuale è stata modellata manualmente basandosi sulla conoscenza esperta (Expert Knowledge). Con la disponibilità di un dataset storico arricchito da dati meteorologici, sarebbe possibile applicare algoritmi di **Structure Learning** per apprendere automaticamente le dipendenze condizionali dai dati, validando o correggendo le ipotesi iniziali.
+
+4.  **Espansione dell'Ontologia:**
+    Integrazione di regole **SWRL (Semantic Web Rule Language)** direttamente nell'ontologia per gestire inferenze più complesse (es. combinazioni temporali di inquinanti) che attualmente sono gestite lato Python.
