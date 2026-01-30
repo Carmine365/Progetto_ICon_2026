@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd  # <--- È QUI
 import seaborn as sns
+from sklearn.metrics import ConfusionMatrixDisplay
 from src.data_loader import waterData
 from src.ml_models import (
     waterLogReg, 
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         # 2. Stampa Metriche Testuali
         model_obj.print_metrics()
         
-        # 3. MOSTRA I GRAFICI (Ecco la parte che mancava!)
+        # 3. MOSTRA I GRAFICI 
         print(f"   -> Generazione Matrice di Confusione per {name}...")
         model_obj.get_confusion_matrix()
         

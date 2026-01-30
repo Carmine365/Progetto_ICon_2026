@@ -93,10 +93,21 @@ class waterModel:
     def get_confusion_matrix(self):
         if self.y_test is not None and self.y_predicted is not None:
             cm = confusion_matrix(self.y_test, self.y_predicted)
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-            disp.plot(cmap="Blues")
-            plt.title(f'Confusion Matrix - {self.__class__.__name__}')
-            plt.show()
+            
+            # Se usato da script (main_ml.py), mostra il grafico
+            # Nota: Per Streamlit è meglio non usare plt.show() qui, ma restituire cm
+            try:
+                disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+                disp.plot(cmap="Blues")
+                plt.title(f'Confusion Matrix - {self.__class__.__name__}')
+                plt.show()
+            except:
+                pass # Evita errori se non c'è display grafico
+            
+            return cm  # <--- AGGIUNGI QUESTO RETURN
+        else:
+            print("Dati non pronti (cm is None)") # Questo spiega il messaggio che vedi
+            return None
 
     def evaluate_with_cross_validation(self, folds=10):
         """
@@ -199,7 +210,7 @@ class waterKnn(waterModel):
         self._single_split_fit()
 
 class waterNeuralNetwork(waterModel):
-    def __init__(self, data: waterData, test_size: float, hidden_layers=(64, 32), max_iter=300):
+    def __init__(self, data: waterData, test_size: float, hidden_layers=(64, 32), max_iter=1000):
         x, y = data.get_training_data()
 
         # Parametri architetturali ora sono dinamici

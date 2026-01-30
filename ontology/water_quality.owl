@@ -81,7 +81,7 @@
                 <rdf:Description>
                   <rdf:first>
                     <rdf:Description>
-                      <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.0</xsd:maxExclusive>
+                      <xsd:maxExclusive rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">6.5</xsd:maxExclusive>
                     </rdf:Description>
                   </rdf:first>
                   <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>

@@ -183,16 +183,27 @@ def main():
                     st.json(scores)
                 
                 # 2. Confusion Matrix
+                # ... dentro il ciclo for dei modelli ...
+                # 2. Confusion Matrix
                 with c2:
                     st.write("**Matrice di Confusione:**")
                     try:
-                        cm = model.get_confusion_matrix()
-                        fig_cm, ax_cm = plt.subplots(figsize=(3, 3))
-                        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax_cm)
-                        ax_cm.set_xlabel('Predicted')
-                        ax_cm.set_ylabel('Actual')
-                        st.pyplot(fig_cm)
-                    except: st.warning("Non disponibile")
+                        cm = model.get_confusion_matrix() # Ora restituisce la matrice!
+                        
+                        if cm is not None:
+                            fig_cm, ax_cm = plt.subplots(figsize=(3, 3))
+                            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False, ax=ax_cm)
+                            ax_cm.set_xlabel('Predicted')
+                            ax_cm.set_ylabel('Actual')
+                            st.pyplot(fig_cm)
+                        else:
+                            st.warning("Dati non pronti (cm is None)")
+                    except Exception as e: 
+                        st.warning(f"Errore: {e}")
+                            
+                    except Exception as e:
+                        # Stampa l'errore vero invece di "N/D"
+                        st.error(f"Errore plot: {e}")
 
                 # 3. Curva ROC
                 with c3:
