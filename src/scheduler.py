@@ -91,7 +91,7 @@ class laboratoryCsp(Problem):
 
         for s in solutions:
             # Icone diverse per mattina/pomeriggio per leggibilità
-            icon_turno = "☀️" if "Mattina" in s['turno'] else "🌒"
+            icon_turno = "☀️ " if "Mattina" in s['turno'] else "🌒 "
             sol_str = f"📅 {s['giorno']} | {icon_turno} {s['turno']} | 👤 {s['staff']}"
             formatted_solutions.append(sol_str)
             

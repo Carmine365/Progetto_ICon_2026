@@ -121,52 +121,51 @@ class waterOntology:
 
     def get_threshold(self, class_name, property_name, default_value):
         """
-        Cerca nella definizione della classe OWL una restrizione numerica
-        (es. AcidicWater -> has_ph_value < 6.5) e restituisce il valore.
-        Se fallisce, restituisce il default_value (fallback).
+        Cerca nella definizione della classe OWL una restrizione numerica.
+        Supporta 'is_a', 'equivalent_to' e intersezioni logiche (&).
         """
         if not self.ontology:
             return default_value
 
         try:
-            # 1. Trova la classe nell'ontologia (es. AcidicWater)
-            # Usiamo search_one con wildcard per evitare problemi di namespace
+            # 1. Trova la classe
             owl_class = self.ontology.search_one(iri=f"*{class_name}")
-            
             if not owl_class:
                 return default_value
 
-            # 2. Itera sulle superclassi/restrizioni (is_a)
-            for restriction in owl_class.is_a:
-                # Controlliamo se è una restrizione (es. has_ph_value some float)
-                # In owlready2, le restrizioni hanno attributi 'property' e 'value'
-                if hasattr(restriction, "property") and hasattr(restriction, "value"):
-                    
-                    # Verifica che la proprietà sia quella cercata (es. has_ph_value)
-                    if restriction.property.name == property_name:
+            # 2. Crea una lista di definizioni da ispezionare (is_a + equivalent_to)
+            definitions = list(owl_class.is_a) + list(owl_class.equivalent_to)
+
+            for restriction in definitions:
+                # Caso A: La restrizione è diretta (es. has_ph_value some ...)
+                # Caso B: La restrizione è in un'intersezione (es. WaterSample & has_ph_value some ...)
+                
+                # Se è un'intersezione (AND), owlready2 ha l'attributo 'Classes'
+                targets = [restriction]
+                if hasattr(restriction, "Classes"):
+                    targets = restriction.Classes
+
+                # Controlliamo ogni componente
+                for target in targets:
+                    if hasattr(target, "property") and hasattr(target, "value"):
                         
-                        # Estrazione del valore numerico. 
-                        # A volte owlready2 restituisce oggetti complessi, cerchiamo il float/int
-                        val = restriction.value
-                        
-                        # Gestione operatori (es. < 6.5 viene mappato dall'oggetto ConstrainedDatatype)
-                        # Per semplicità, in progetti base, spesso il valore è accessibile direttamente 
-                        # o tramite parsing testuale se è un tipo semplice.
-                        
-                        # TENTATIVO DIRETTO (funziona per restrizioni semplici 'some value')
-                        if isinstance(val, (int, float)):
-                            return float(val)
+                        if target.property.name == property_name:
+                            val = target.value
                             
-                        # TENTATIVO AVANZATO (per facet restrictions come < 6.5)
-                        # Spesso owlready incapsula i range in oggetti ConstrainedDatatype
-                        if hasattr(val, "max_exclusive"): return float(val.max_exclusive)
-                        if hasattr(val, "min_exclusive"): return float(val.min_exclusive)
-                        if hasattr(val, "max_inclusive"): return float(val.max_inclusive)
-                        if hasattr(val, "min_inclusive"): return float(val.min_inclusive)
+                            # Estrazione valore (float semplice)
+                            if isinstance(val, (int, float)):
+                                return float(val)
+                                
+                            # Estrazione valore (ConstrainedDatatype es. < 6.5)
+                            if hasattr(val, "max_exclusive"): return float(val.max_exclusive)
+                            if hasattr(val, "min_exclusive"): return float(val.min_exclusive)
+                            if hasattr(val, "max_inclusive"): return float(val.max_inclusive)
+                            if hasattr(val, "min_inclusive"): return float(val.min_inclusive)
 
         except Exception as e:
             print(f"[WARN] Impossibile estrarre soglia per {class_name}: {e}")
         
+        # Se non troviamo nulla, torniamo il default
         return default_value
 
 # Istanza globale

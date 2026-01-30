@@ -241,7 +241,7 @@ class WaterExpert(BaseWaterExpert):
 
     @Rule(Fact(step="ask_ph"))
     def ask_ph(self):
-        print("Inserisci pH (0-14):")
+        print("[1/9] Inserisci pH (0-14):")
         try:
             val = float(input())
             if valid_ph(val):
@@ -254,7 +254,7 @@ class WaterExpert(BaseWaterExpert):
 
     @Rule(Fact(step="ask_sulfates"))
     def ask_sulfates(self):
-        print("\nInserisci Solfati (mg/L):")
+        print("\n[2/9] Inserisci Solfati (mg/L):")
         try:
             val = float(input())
             self.declare(Fact(param='sulfate', value=val))
@@ -263,7 +263,7 @@ class WaterExpert(BaseWaterExpert):
 
     @Rule(Fact(step="ask_turbidity"))
     def ask_turbidity(self):
-        print("\nInserisci Torbidità (NTU):")
+        print("\n[3/9] Inserisci Torbidità (NTU):")
         
         # INTEGRAZIONE: Se l'utente aveva visto acqua torbida, ricordaglielo
         if self.facts.get(Fact(osservazione_torbida="si")):
@@ -277,7 +277,7 @@ class WaterExpert(BaseWaterExpert):
         
     @Rule(Fact(step="ask_solids"))
     def ask_solids(self):
-        print("\nInserisci Solidi TDS (ppm):")
+        print("\n[4/9] Inserisci Solidi TDS (ppm):")
         try:
             val = float(input())
             self.declare(Fact(param='solids', value=val))
@@ -286,7 +286,7 @@ class WaterExpert(BaseWaterExpert):
 
     @Rule(Fact(step="ask_hardness"))
     def ask_hardness(self):
-        print("\nInserisci Durezza (mg/L):")
+        print("\n[5/9] Inserisci Durezza (mg/L):")
         try:
             val = float(input())
             self.declare(Fact(param='hardness', value=val))
