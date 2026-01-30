@@ -8,6 +8,8 @@ from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.preprocessing import StandardScaler
 from sklearn import tree
+from sklearn.impute import SimpleImputer  
+from sklearn.pipeline import Pipeline     
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -115,13 +117,17 @@ class waterModel:
         return self.cv_means['Accuracy'], self.cv_stds['Accuracy']
 
     def _single_split_fit(self):
-        scaler = StandardScaler()
+        """
+        Esegue fit/predict su un singolo split.
+        La PIPELINE gestisce Imputer e Scaler internamente, quindi non servono qui.
+        """
         if self.x_train is None or self.x_test is None or self.y_train is None:
-            raise ValueError("x_train, x_test, and y_train must not be None before fitting.")
-        self.x_train = scaler.fit_transform(self.x_train)
-        self.x_test = scaler.transform(self.x_test)
+            raise ValueError("Split non effettuato.")
+            
+        # ORA È MOLTO PIÙ PULITO:
         self.model.fit(self.x_train, self.y_train.ravel())
         self.y_predicted = self.model.predict(self.x_test)
+        
         self._calculate_scores()
 
     def _calculate_scores(self):
@@ -138,8 +144,14 @@ class waterModel:
 class waterLogReg(waterModel):
     def __init__(self, data: waterData, test_size: float, max_iter=1000):
         x, y = data.get_training_data()
-        # Parametro max_iter ora è dinamico
-        super().__init__(LogisticRegression(max_iter=max_iter), x, y, {}, test_size)
+        # DEFINIZIONE PIPELINE
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')), # Gestisce i NaN
+            ('scaler', StandardScaler()),                # Normalizza
+            ('clf', LogisticRegression(max_iter=max_iter))
+        ])
+        
+        super().__init__(pipeline, x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
@@ -148,32 +160,48 @@ class waterLogReg(waterModel):
 class waterDecTree(waterModel):
     def __init__(self, data: waterData, test_size: float, max_depth=5):
         x, y = data.get_training_data()
-        # Parametro max_depth ora è dinamico (default 5)
-        super().__init__(tree.DecisionTreeClassifier(max_depth=max_depth), x, y, {}, test_size)
+
+        # Anche i Tree beneficiano dell'Imputer (sklearn non supporta NaN nei tree standard)
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
+            # Scaler non strettamente necessario per Tree, ma male non fa
+            ('clf', DecisionTreeClassifier(max_depth=max_depth)) 
+        ])
+        
+        super().__init__(pipeline, x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
-        # I tree non necessitano di scaling obbligatorio, ma per coerenza con gli altri
-        # modelli potresti volerlo aggiungere. Qui manteniamo il comportamento originale.
-        self.model.fit(self.x_train, self.y_train.ravel())
-        self.y_predicted = self.model.predict(self.x_test)
-        self._calculate_scores()
+        self._single_split_fit()
 
 class waterKnn(waterModel):
     def __init__(self, data: waterData, test_size: float, neighbors=5):
         x, y = data.get_training_data()
-        # Parametro neighbors è dinamico
-        super().__init__(KNeighborsClassifier(n_neighbors=neighbors), x, y, {}, test_size)
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
+            ('scaler', StandardScaler()), # Fondamentale per KNN
+            ('clf', KNeighborsClassifier(n_neighbors=neighbors))
+        ])
+        
+        super().__init__(pipeline, x, y, {}, test_size)
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
+    
     def predict(self):
         self._single_split_fit()
 
 class waterNeuralNetwork(waterModel):
     def __init__(self, data: waterData, test_size: float, hidden_layers=(64, 32), max_iter=1000):
         x, y = data.get_training_data()
+
         # Parametri architetturali ora sono dinamici
-        super().__init__(MLPClassifier(hidden_layer_sizes=hidden_layers, max_iter=max_iter), x, y, {}, test_size)
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
+            ('scaler', StandardScaler()), # Fondamentale per MLP
+            ('clf', MLPClassifier(hidden_layer_sizes=hidden_layers, max_iter=max_iter))
+        ])
+        
+        super().__init__(pipeline, x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
@@ -181,14 +209,16 @@ class waterNeuralNetwork(waterModel):
 
 class waterNaiveBayes(waterModel):
     def __init__(self, data: waterData, test_size: float):
-        # Naive Bayes non ha iperparametri critici semplici da esporre come gli altri
         x, y = data.get_training_data()
-        super().__init__(GaussianNB(), x, y, {}, test_size)
+        
+        pipeline = Pipeline([
+            ('imputer', SimpleImputer(strategy='mean')),
+            ('scaler', StandardScaler()), 
+            ('clf', GaussianNB())
+        ])
+        
+        super().__init__(pipeline, x, y, {}, test_size)
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=self.test_size)
 
     def predict(self):
-        # Aggiunto lo scaling anche qui per uniformità, se necessario
-        # (Originalmente usava fit diretto senza scaling)
-        self.model.fit(self.x_train, self.y_train.ravel())
-        self.y_predicted = self.model.predict(self.x_test)
-        self._calculate_scores()
+        self._single_split_fit() # Ora usa la pipeline standard

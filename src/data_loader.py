@@ -17,10 +17,10 @@ class waterData:
         # Carica e pulisce i dati (rimuove righe con campi vuoti)
         self.data = pd.read_csv(WATER_DATA_FILE)
         
-        # INVECE DI dropna():
-        # Sostituiamo i valori mancanti (NaN) con la media della colonna.
-        # dropna() cancellerebbe 1200+ righe, che sono troppe.
-        self.data.fillna(self.data.mean(), inplace=True)
+        # --- CORREZIONE: RIMOSSO IL DATA LEAKAGE ---
+        # Lasciamo i NaN.
+        # Saranno gestiti dalla Pipeline di scikit-learn dentro ml_models.py
+        # self.data.fillna(self.data.mean(), inplace=True) <--- RIMOSSO
         
         self.features_list = list(self.data.columns)
 
