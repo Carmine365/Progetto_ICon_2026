@@ -798,7 +798,7 @@ La diagnostica basata su regole mostra che tutti i parametri inseriti
 rientrano nei limiti di sicurezza definiti dall’ontologia e dalle linee guida WHO,
 portando alla classificazione del campione come potabile.*
 
-### 3.9.2 Anomalia chimica non critica
+### 3.9.2 Caso di anomalia chimica 
 
 ![GUI – anomalia chimica](images/anomaliaChimica.png)
 
@@ -808,7 +808,7 @@ senza classificare il caso come critico né attivare procedure di emergenza.*
 
 ### 3.9.3 Caso critico
 
-![GUI – caso critico](images/CasoCritico.png)
+![GUI – caso critico](images/casoCritico.png)
 
 *Caso critico rilevato.
 La combinazione di pH acido e alta concentrazione di solfati
