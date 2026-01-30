@@ -1,3 +1,15 @@
+# Documentazione Progetto: Water Quality Assessment System
+
+**Gruppo di lavoro**
+* Carmine Giove, 797656, c.giove10@studenti.uniba.it
+* Claudio Gualberti, 801963, c.gualberti@studenti.uniba.it
+
+**URL repository:** https://github.com/Carmine365/Progetto_ICon_2026
+
+**AA 2025-2026**
+
+---
+
 # Water Quality Assessment System   
 ## Sistema ibrido: Ontologia + KBS rule-based + ML + CSP
 
@@ -141,6 +153,8 @@
 
 - [8. Conclusioni](#8-conclusioni)
   - [8.1 Sviluppi Futuri](#81-sviluppi-futuri)
+
+- [9. Riferimenti Bibliografici](#9-riferimenti-bibliografici)
 
 ---
 
@@ -1788,3 +1802,19 @@ Nonostante il sistema sia completamente operativo, sono state individuate alcune
 
 4.  **Espansione dell'Ontologia:**
     Integrazione di regole **SWRL (Semantic Web Rule Language)** direttamente nell'ontologia per gestire inferenze più complesse (es. combinazioni temporali di inquinanti) che attualmente sono gestite lato Python.
+
+---
+
+# 9. Riferimenti Bibliografici
+
+[1] Russell, S., & Norvig, P. (2020). *Artificial Intelligence: A Modern Approach* (4th ed.). Pearson.
+
+[2] World Health Organization (WHO). (2022). *Guidelines for drinking-water quality: Fourth edition incorporating the first and second addenda*. (Fonte delle soglie di dominio utilizzate nel KBS).
+
+[3] Pedregosa, F., et al. (2011). Scikit-learn: Machine Learning in Python. *Journal of Machine Learning Research*, 12, 2825-2830. (Riferimento per il modulo ML).
+
+[4] Lamy, J. B. (2017). Owlready: Ontology-oriented programming in Python with automatic classification and high level constructs for biomedical ontologies. *Artificial Intelligence in Medicine*, 80, 11-28. (Riferimento per il modulo Ontologico).
+
+[5] Experta Documentation. *Experta: Expert Systems for Python*. PyPI. Disponibile su: https://pypi.org/project/experta/ (Libreria utilizzata per il motore inferenziale).
+
+[6] Kaggle. *Water Quality: Testing the potability of water using different ML classifiers*. Dataset utilizzato per il training e la valutazione dei modelli.
