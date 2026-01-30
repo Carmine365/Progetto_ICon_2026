@@ -1505,7 +1505,7 @@ Per il confronto tra modelli in questa documentazione si usano esclusivamente ri
 *Nel confronto tra tutti i modelli presente nel grafico, si osserva come Decision Tree e Naive Bayes ottengano valori di accuracy leggermente superiori, ma come mostrato dalle confusion matrix, tali risultati sono influenzati dallo sbilanciamento del dataset e non riflettono una reale capacità discriminativa.*
 
 
-![Esecuzione da terminale di main_ml.py](images/main_mlTerminal.png)
+![Esecuzione da terminale di main_ml.py](images/main_mlScreen.png)
 
 *Qui sono riportate le principali fasi della pipeline di apprendimento automatico:
 caricamento del dataset, valutazione tramite cross-validation (10-fold) e
