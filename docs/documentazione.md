@@ -58,6 +58,7 @@
   - [3.6 Output finale del sistema esperto](#36-output-finale-del-sistema-esperto)
   - [3.7 Complessità, robustezza ed estendibilità](#37-complessità-robustezza-ed-estendibilità)
   - [3.8 Limiti del KBS e possibili miglioramenti](#38-limiti-del-kbs-e-possibili-miglioramenti)
+  - [3.9 Interfaccia Grafica del sistema esperto (UI)](#39-interfaccia-grafica-del-sistema-esperto-ui))
 
 - [4. Ontologia OWL: supporto semantico e inferenza opzionale](#4-ontologia-owl-supporto-semantico-e-inferenza-opzionale)
   - [4.1 Ruolo dell’ontologia: modello concettuale e classificazione semantica](#41-ruolo-dellontologia-modello-concettuale-e-classificazione-semantica)
@@ -771,6 +772,49 @@ conclude per la potabilità del campione, senza attivare interventi operativi.*
 1. **Copertura limitata di regole relazionali**: il sistema include regole che combinano più parametri, ma il numero di combinazioni critiche gestite è volutamente contenuto. Un miglioramento naturale sarebbe introdurre ulteriori regole multi-parametro (es. combinazioni che includano anche torbidità/solidi) mantenendo però la KB leggibile e manutenibile.
 2. **Centralizzazione delle soglie**: le soglie sono attualmente cablate nelle regole; sarebbe preferibile una gestione centralizzata tramite costanti o file di configurazione, per facilitare manutenzione e aggiornamenti.
 3. **Sistema di scoring**: attualmente ogni anomalia contribuisce in modo simile al verdetto finale. Un miglioramento significativo sarebbe introdurre un sistema a punteggio pesato (o logica fuzzy) per rappresentare meglio la gravità relativa dei diversi problemi.
+
+---
+
+## 3.9 Interfaccia Grafica del sistema esperto (UI)
+
+L’interfaccia grafica, eseguibile attraverso `app.py`, fornisce un punto di accesso
+alternativo al sistema esperto, consentendo l’analisi dei campioni d’acqua
+senza l’utilizzo diretto del terminale.
+La UI non introduce nuova logica decisionale, ma riutilizza integralmente
+il Knowledge-Based System descritto nelle sezioni precedenti,
+limitandosi a presentare i risultati dell’inferenza.
+
+L’utente inserisce i parametri del campione tramite i campi dell’interfaccia
+e avvia l’analisi con un’azione esplicita.
+La UI invoca il motore inferenziale del KBS e visualizza l’esito finale
+dell’analisi, evidenziando eventuali anomalie o condizioni critiche.
+
+### 3.9.1 Caso normale con acqua potabile
+
+![GUI – caso normale](images/casoNormale.png)
+
+*Interfaccia grafica del sistema in un caso normale.
+La diagnostica basata su regole mostra che tutti i parametri inseriti
+rientrano nei limiti di sicurezza definiti dall’ontologia e dalle linee guida WHO,
+portando alla classificazione del campione come potabile.*
+
+### 3.9.2 Anomalia chimica non critica
+
+![GUI – anomalia chimica](images/anomaliaChimica.png)
+
+*Caso di anomalia chimica rilevata, ma non critica.
+Il sistema segnala una violazione del pH rispetto alle soglie di sicurezza,
+senza classificare il caso come critico né attivare procedure di emergenza.*
+
+### 3.9.3 Caso critico
+
+![GUI – caso critico](images/CasoCritico.png)
+
+*Caso critico rilevato.
+La combinazione di pH acido e alta concentrazione di solfati
+attiva la regola relazionale di rischio elevato, portando
+alla classificazione del campione come critico.*
+
 
 
 ---
