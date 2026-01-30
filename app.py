@@ -101,6 +101,14 @@ def main():
     # B. Input Utente (Tutti i 9 parametri)
     st.sidebar.subheader("🧪 Inserimento Dati Campione")
     with st.sidebar.form("water_input_form"):
+
+        # --- NUOVO: Osservazioni Qualitative ---
+        st.markdown("#### 👁️ Osservazioni Preliminari")
+        obs_turbidity = st.checkbox("Acqua visivamente torbida?", value=False)
+        obs_odor = st.checkbox("Cattivo odore (es. uova marce)?", value=False)
+        obs_taste = st.checkbox("Sapore metallico?", value=False)
+        st.markdown("---")
+
         # Parametri Chimico-Fisici Fondamentali
         in_ph = st.slider("pH", 0.0, 14.0, 7.0, help="Acidità/Basicità dell'acqua")
         in_hardness = st.number_input("Durezza (mg/L)", 0.0, 400.0, 200.0)
@@ -263,6 +271,14 @@ def main():
             engine.declare(Fact(param='organic_carbon', value=in_organic))
             engine.declare(Fact(param='trihalomethanes', value=in_thm))
             engine.declare(Fact(param='turbidity', value=in_turbidity))
+
+            # --- NUOVO: Passaggio osservazioni qualitative ---
+            if obs_turbidity:
+                engine.declare(Fact(osservazione_torbida="si"))
+            if obs_odor:
+                engine.declare(Fact(osservazione_odore="si"))
+            if obs_taste:
+                engine.declare(Fact(osservazione_sapore="si"))
             
             # Esecuzione
             st.markdown("### 📝 Report Analisi")

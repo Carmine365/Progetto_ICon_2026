@@ -63,6 +63,9 @@ class BaseWaterExpert(KnowledgeEngine):
         # 4. Parametri Tossici/Biologici
         self.ORGANIC_CARBON_MAX = manager.get_threshold("HighCarbonWater", "has_organic_carbon_value", DEFAULT_ORGANIC_CARBON_MAX)
         self.THM_MAX = manager.get_threshold("HighTHMWater", "has_trihalomethanes_value", DEFAULT_THM_MAX)
+
+        self.PH_CORROSIVE_MAX = manager.get_threshold("CorrosiveWater", "has_ph_value", 6.0)
+        self.SULFATE_CORROSIVE_MIN = manager.get_threshold("CorrosiveWater", "has_sulfate_value", 200.0)
         
         # Debug per verificare cosa ha caricato (utile per l'esame)
         print(f"\n[SISTEMA IBRIDO] Soglie Caricate:")
@@ -110,6 +113,11 @@ class BaseWaterExpert(KnowledgeEngine):
             self.problems_count += 1
         else:
             self.notify("✅ Torbidità nella norma.", "success")
+    
+        # 2. NUOVO: Controllo di Incongruenza (Spostato qui per valere per tutti)
+        # Se l'utente dice "è torbida" ma il sensore dice "bassa", c'è qualcosa che non va.
+        if self.facts.get(Fact(osservazione_torbida="si")) and val < 5.0:
+             self.notify("⚠️ INCONGRUENZA: Hai segnalato acqua torbida visivamente, ma il valore strumentale è basso. Verificare sensore.", "warning")
 
     @Rule(Fact(param='solids', value=MATCH.val))
     def check_solids(self, val):
@@ -150,12 +158,14 @@ class BaseWaterExpert(KnowledgeEngine):
             self.problems_count += 1
 
     # --- REGOLA RELAZIONALE COMPLESSA ---
-    @Rule(Fact(param='ph', value=P(lambda x: x < 6.0)),
-          Fact(param='sulfate', value=P(lambda x: x > 200)))
-    def corrosion_risk(self):
-        self.notify("🔥 COMBINAZIONE CRITICA: pH Acido + Solfati Alti! Rischio corrosione.", "error")
-        self.declare(Fact(problem_type="critical"))
-        self.csp_suggestion = "critical"
+    @Rule(Fact(param='ph', value=MATCH.ph_val),
+        Fact(param='sulfate', value=MATCH.sulf_val))
+    def corrosion_risk(self, ph_val, sulf_val):
+        # Il controllo avviene QUI, usando le variabili dinamiche dell'istanza
+        if ph_val < self.PH_CORROSIVE_MAX and sulf_val > self.SULFATE_CORROSIVE_MIN:
+            self.notify(f"🔥 COMBINAZIONE CRITICA: pH < {self.PH_CORROSIVE_MAX} e Solfati > {self.SULFATE_CORROSIVE_MIN}!", "error")
+            self.declare(Fact(problem_type="critical"))
+            self.csp_suggestion = "critical"
 
     # --- INFERENZA INTERVENTO (Aggiornata) ---
     @Rule(OR(Fact(problema_ph=W()), Fact(problema_solfati=W()), Fact(problema_chimico=W()), Fact(problema_tossico=W())))
@@ -169,6 +179,16 @@ class BaseWaterExpert(KnowledgeEngine):
         if self.csp_suggestion != "critical":
             self.csp_suggestion = "physical"
             self.declare(Fact(need_lab="physical"))
+
+    @Rule(Fact(osservazione_odore="si"))
+    def check_bad_smell(self):
+        self.notify("⚠️ SEGNALAZIONE ODORE: Possibile contaminazione batterica o eccesso di cloro.", "warning")
+        # Opzionale: incrementa contatore problemi se vuoi essere severo
+        # self.problems_count += 1 
+
+    @Rule(Fact(osservazione_sapore="si"))
+    def check_bad_taste(self):
+        self.notify("ℹ️ SEGNALAZIONE SAPORE: Sapore metallico rilevato. Controllare tubature o solfati.", "info")
 
 
 # ==============================================================================
@@ -227,7 +247,7 @@ class WaterExpert(BaseWaterExpert):
         ans = input("L'acqua ha un cattivo odore (es. uova marce, cloro)? [si/no]: ").lower()
         if ans == "si":
             self.declare(Fact(osservazione_odore="si"))
-            print(Fore.YELLOW + " >> Nota: Possibile contaminazione batterica o eccesso di cloro." + Fore.RESET)
+            # print(Fore.YELLOW + " >> Nota: Possibile contaminazione batterica o eccesso di cloro." + Fore.RESET)
 
         # Domanda 3: Sapore
         ans = input("L'acqua ha un sapore metallico? [si/no]: ").lower()
@@ -263,12 +283,7 @@ class WaterExpert(BaseWaterExpert):
 
     @Rule(Fact(step="ask_turbidity"))
     def ask_turbidity(self):
-        print("\n[3/9] Inserisci Torbidità (NTU):")
-        
-        # INTEGRAZIONE: Se l'utente aveva visto acqua torbida, ricordaglielo
-        if self.facts.get(Fact(osservazione_torbida="si")):
-            print(Fore.YELLOW + "⚠️  NOTA: Avevi segnalato visivamente acqua torbida." + Fore.RESET)
-        
+        print("\n[3/9] Inserisci Torbidità (NTU):")  
         try:
             val = float(input())
             self.declare(Fact(param='turbidity', value=val))

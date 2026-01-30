@@ -88,7 +88,7 @@ Addestramento di classificatori supervisionati per predire la variabile target `
 Un agente intelligente implementato con la libreria `experta` (basata sull'algoritmo Rete) che applica regole di dominio.
 
 * **Knowledge Base:** Ontologia OWL gestita tramite `Owlready2` che definisce la semantica del dominio (es. `WaterSample` e classi di anomalia come `AcidicWater`, `HighSulfateWater`).
-* **Regole WHO:** Implementazione di soglie rigide di sicurezza (es. `IF pH < 6.5 THEN Non-Potabile`).
+* **Regole WHO**: Applicazione di vincoli di sicurezza (es. pH, Solfati) le cui soglie sono caricate dinamicamente dall'Ontologia all'avvio (`Single Source of Truth`), garantendo flessibilità e manutenibilità senza modificare il codice sorgente.
 * **CSP Scheduler:** Utilizzo di `python-constraint` per allocare le analisi di laboratorio rispettando vincoli di orario e disponibilità dei tecnici.
 
 ### 3. Modulo Ontologia OWL (Semantica + Reasoner opzionale)
@@ -98,7 +98,7 @@ Strato semantico che modella formalmente il dominio (campione d’acqua, paramet
 * **Classi/concetti principali:** `WaterSample`, `AcidicWater`, `HighSulfateWater`, `TurbidWater`, `UnsafeWater`, `CorrosiveWater`.
 * **Data Properties:** `has_ph_value`, `has_sulfate_value`, `has_turbidity_value`.
 * **Integrazione nel codice:** `src/ontology_manager.py`
-  * recupera descrizioni dei parametri (es. `get_parameter_description`);
+  * agisce come base di configurazione per il KBS, fornendo i valori limite per i parametri di rischio tramite un parsing robusto e ricorsivo. (es. `get_parameter_description`);
   * prova ad attivare il reasoner con `sync_reasoner_pellet()` (con **fallback** se non disponibile);
   * esegue un controllo semantico **opzionale** focalizzato su `CorrosiveWater` (solo se il reasoner è attivo).
 

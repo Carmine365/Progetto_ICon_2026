@@ -647,6 +647,14 @@ All’avvio del motore, il sistema prepara il contesto operativo inizializzando:
 Nella versione **CLI** viene inoltre caricato un dizionario di **medie statistiche** dal dataset tramite
 `waterData().get_medium_values_water()` (`self.mean_water_values`), utile come supporto informativo e base per possibili estensioni, ma non necessario al funzionamento core del KBS.
 
+#### **Caricamento Dinamico delle Soglie (Single Source of Truth)** 
+
+Oltre ai fatti di stato, in questa fase il sistema interroga l'Ontologia (tramite `ontology_manager`) per recuperare le **soglie critiche** di dominio (es. limiti di pH, soglie di rischio corrosione). Le regole del sistema esperto non contengono valori numerici hard-coded (scritti nel codice), ma utilizzano variabili istanziate **dinamicamente** all'avvio. Questo garantisce che:
+
+- L'Ontologia OWL sia l'**unica** fonte di verità (Single Source of Truth);
+
+- Modificando un valore nell'ontologia (es. standard WHO aggiornati), il sistema esperto si adegui **automaticamente** al riavvio senza necessità di ricompilare o modificare il codice sorgente Python (`expert_system.py`).
+
 ### 3.3.2 Acquisizione delle osservazioni qualitative
 
 Le osservazioni qualitative vengono acquisite nella prima fase interattiva tramite una regola dedicata del KBS (`ask_observations`), attivata dal fatto di stato `Fact(step="ask_observations")`.  
@@ -688,7 +696,7 @@ Il sistema confronta i valori con soglie definite come costanti (WHO / soglie op
 | **organic_carbon** | `> 10.0` | `Fact(problema_biologico="carbonio")` | incrementa anomalie |
 | **trihalomethanes** | `> 80.0` | `Fact(problema_tossico="thm")` | incrementa anomalie |
 
-**Nota di coerenza con l'osservazione:** se l’utente ha indicato osservazione visiva di torbidità (`Fact(osservazione_torbida="si")`), prima dell’inserimento della torbidità strumentale il sistema mostra un promemoria (integrazione tra evidenza qualitativa e misura numerica).
+**Controllo di Coerenza Cross-Model** Il sistema implementa regole di validazione incrociata tra osservazioni qualitative (soggettive) e misure strumentali (oggettive) all'interno della classe base del motore inferenziale. Ad esempio, la regola `check_turbidity` verifica la coerenza: se l'utente segnala visivamente acqua torbida (`osservazione_torbida="si"`) ma il sensore rileva valori bassi (< 5.0 NTU), il sistema non si limita a registrare il dato, ma inferisce e notifica una incongruenza (warning sensore). Questa logica è centralizzata e attiva indipendentemente dall'interfaccia utilizzata (CLI o GUI).
 
 
 ---
@@ -770,7 +778,6 @@ conclude per la potabilità del campione, senza attivare interventi operativi.*
 ## 3.8 Limiti del KBS e possibili miglioramenti
 
 1. **Copertura limitata di regole relazionali**: il sistema include regole che combinano più parametri, ma il numero di combinazioni critiche gestite è volutamente contenuto. Un miglioramento naturale sarebbe introdurre ulteriori regole multi-parametro (es. combinazioni che includano anche torbidità/solidi) mantenendo però la KB leggibile e manutenibile.
-2. **Centralizzazione delle soglie**: le soglie sono attualmente cablate nelle regole; sarebbe preferibile una gestione centralizzata tramite costanti o file di configurazione, per facilitare manutenzione e aggiornamenti.
 3. **Sistema di scoring**: attualmente ogni anomalia contribuisce in modo simile al verdetto finale. Un miglioramento significativo sarebbe introdurre un sistema a punteggio pesato (o logica fuzzy) per rappresentare meglio la gravità relativa dei diversi problemi.
 
 ---
@@ -909,6 +916,9 @@ Se viene inserito un campione con `Solfati = 300.0` e `pH = 7.0`:
 
 Questa inferenza deduce e mostra come l’ontologia possa trasformare valori numerici in concetti di alto livello. Nel progetto, la classificazione OWL è mantenuta **separata** dalla logica decisionale del KBS (che resta rule-based), ma costituisce una base solida per estensioni future in cui i risultati del reasoner possano essere integrati nel flusso diagnostico.
 
+Il modulo gestisce il ciclo di vita semantico e, in particolare, implementa un meccanismo di **parsing ricorsivo** robusto per l'estrazione dei vincoli numerici. Poiché le definizioni in OWL possono variare strutturalmente (es. max_exclusive vs max_inclusive, oppure annidate all'interno di intersezioni logiche complesse `IntersectionOf`), il manager non si limita a una lettura superficiale. Attraverso una ricerca ricorsiva nell'albero della definizione di classe, il sistema è in grado di individuare la restrizione corretta su una specifica proprietà (`onProperty♠) a qualsiasi livello di profondità.
+
+Questo approccio disaccoppia il codice Python dalla struttura specifica generata dall'editor (Protégé o script), rendendo il sistema resiliente a refactoring dell'ontologia.
 
 ---
 
@@ -1554,6 +1564,21 @@ Per il confronto tra modelli in questa documentazione si usano esclusivamente ri
 *Qui sono riportate le principali fasi della pipeline di apprendimento automatico:
 caricamento del dataset, valutazione tramite cross-validation (10-fold) e
 generazione dei grafici di valutazione sul test set.*
+
+### 6.6.3 Analisi critica dello sbilanciamento e performance dell'MLP
+
+Il dataset presenta un moderato sbilanciamento tra le classi (circa 60% Non Potabile vs 40% Potabile). 
+Per la valutazione comparativa, si è scelto di mantenere la distribuzione naturale dei dati (senza forzare il bilanciamento su tutti i modelli), privilegiando l'**Accuracy** come metrica di riferimento globale. Tuttavia, per evitare l'Accuracy Paradox, i risultati sono stati validati osservando le Matrici di Confusione e le curve ROC.
+
+Dai risultati emerge una differenza significativa di performance tra le diverse famiglie di algoritmi:
+
+1.  **Robustezza dei modelli semplici:** Algoritmi come **Decision Tree** e **Naive Bayes** hanno dimostrato una migliore capacità di adattamento "out-of-the-box" su questo dataset tabellare, raggiungendo un'accuratezza media superiore (~61-62%) e una discreta capacità di separazione delle classi.
+
+2.  **Sensibilità della Rete Neurale (MLP):** Il modello **Multi-Layer Perceptron (MLP)** ha ottenuto prestazioni inferiori (~52%), faticando a generalizzare correttamente. Questo comportamento è giustificato da due fattori tecnici:
+    * **Sensibilità allo sbilanciamento:** A differenza degli alberi decisionali che creano partizioni nette, l'MLP basato su discesa del gradiente tende a convergere verso minimi locali che favoriscono la classe maggioritaria (0) per minimizzare l'errore globale, se non pesantemente bilanciato.
+    * **Rumorosità dei dati:** Il dataset sulla qualità dell'acqua presenta confini decisionali complessi e sovrapposti; in questo contesto, modelli con alta varianza come le reti neurali tendono all'overfitting o alla convergenza instabile senza un tuning degli iperparametri estremamente spinto, che esulava dagli scopi di questo confronto baseline.
+
+In conclusione, per questo specifico dominio, l'approccio simbolico (Decision Tree) o probabilistico semplice (Naive Bayes) risulta più efficiente rispetto all'approccio connessionista (MLP) a parità di preprocessing.
 
 ---
 
