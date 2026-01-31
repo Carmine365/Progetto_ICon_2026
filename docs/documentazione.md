@@ -838,39 +838,43 @@ Questa scheda è dedicata alla comprensione preliminare del dataset.
 * **Visualizzazione Distribuzioni:** Istogrammi interattivi per analizzare la varianza e il range di valori di ogni parametro (es. pH, Solfati).
 * **Analisi delle Correlazioni:** Una *Heatmap* (matrice di correlazione) permette di identificare visivamente le dipendenze lineari tra le variabili, utile per comprendere quali fattori influenzano maggiormente la potabilità.
 * **Pairplot:** Grafici a dispersione per individuare cluster o separazioni nette tra le classi `Potable` e `Not Potable`.
-![Screenshot Analisi Esplorativa](images/gui_eda.png)
+ 
+![Screenshot Analisi Esplorativa](images/gui_eda.PNG)
 
 **2. 🤖 Modelli ML**
 Una dashboard di valutazione comparativa per i modelli di Machine Learning addestrati.
 * **Selezione Modello:** L'utente può scegliere tra *Decision Tree*, *KNN*, *Logistic Regression*, *Naive Bayes* e *MLP*.
 * **Metriche di Performance:** Visualizzazione immediata di Accuracy, Precision, Recall e F1-Score sul Test Set.
 * **Matrice di Confusione:** Plot grafico (tramite `seaborn`/`matplotlib`) per analizzare i falsi positivi e negativi, fondamentale per valutare la sicurezza del modello in un contesto sanitario.
-![Screenshot Dashboard ML](images/gui_ml.png)
+ 
+![Screenshot Dashboard ML](images/gui_ml.PNG)
 
 **3. 🧪 Sistema Esperto (KBS)**
 Il cuore "simbolico" del progetto.
 * **Input Ibrido:** Form per l'inserimento sia dei dati strumentali (slider numerici) sia delle evidenze qualitative (checkbox per odore, colore, sapore).
 * **Feedback in Tempo Reale:** Il sistema notifica all'utente eventuali incongruenze (es. "Acqua torbida" ma valore NTU basso) grazie alle regole di coerenza definite nella classe base.
 * **Diagnosi Ontologica:** L'output finale riporta non solo l'esito (Sicura/Non Sicura) ma anche i suggerimenti di trattamento derivati dalla Knowledge Base.
-![Screenshot Sistema Esperto](images/gui_expert.png)
+
+![Screenshot Sistema Esperto](images/gui_expert.PNG)
 
 **4. 🔮 Rete Bayesiana**
 Un modulo dedicato al **ragionamento in condizioni di incertezza**.
 * A differenza del sistema esperto (deterministico), qui l'utente può inserire evidenze parziali o incerte (es. "Forte presenza di pesticidi").
 * Il sistema calcola e aggiorna dinamicamente la **probabilità a posteriori** della potabilità, mostrando come ogni nuova evidenza influenzi la fiducia nella diagnosi finale.
-![Screenshot Rete Bayesiana](images/gui_bayes.png)
+
+![Screenshot Rete Bayesiana](images/gui_bayes.PNG)
 
 **5. 🛠️ Gestione Turni (CSP)**
 Un modulo operativo che risolve un **Constraint Satisfaction Problem (CSP)**.
 In caso di emergenza o manutenzione ordinaria, questo tab interfaccia lo *scheduler* (basato su algoritmi di ricerca o librerie di vincoli) per assegnare automaticamente i turni alla squadra di manutenzione, ottimizzando la copertura e rispettando i vincoli di disponibilità degli operatori.
-*(Inserire qui screenshot del Tab 5)*
-![Screenshot Gestione Turni](images/gui_csp.png)
+
+![Screenshot Gestione Turni](images/gui_csp.PNG)
 
 Questa struttura a "Dashboard Unificata" dimostra l'integrazione efficace tra i diversi paradigmi dell'Ingegneria della Conoscenza (Simbolico, Connessionista e Probabilistico) in un unico strumento interattivo.
 
 ### 3.9.1 Caso normale con acqua potabile
 
-![GUI – caso normale](images/casoNormale.png)
+![GUI – caso normale](images/casoNormale.PNG)
 
 *Interfaccia grafica del sistema in un caso normale.
 La diagnostica basata su regole mostra che tutti i parametri inseriti
