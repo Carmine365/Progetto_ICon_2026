@@ -874,7 +874,7 @@ Questa struttura a "Dashboard Unificata" dimostra l'integrazione efficace tra i 
 
 ### 3.9.1 Caso normale con acqua potabile
 
-![GUI – caso normale](images/casoNormale.PNG)
+![GUI – caso normale](images/casoNormale.png)
 
 *Interfaccia grafica del sistema in un caso normale.
 La diagnostica basata su regole mostra che tutti i parametri inseriti
