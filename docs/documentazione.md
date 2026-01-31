@@ -125,9 +125,9 @@
     - [7.4.1 Risultati della Cross-Validation (mean ± std)](#741-risultati-della-cross-validation-mean--std)
     - [7.4.2 Nota su valutazioni “single split”](#742-nota-su-valutazioni-single-split)
     - [7.4.3 Analisi critica dello sbilanciamento e performance dell'MLP](#743-analisi-critica-dello-sbilanciamento-e-performance-dell'-MLP)
-  - [7.4.4 Analisi critica: ML vs approccio simbolico (KBS)](#744-analisi-critica-ml-vs-approccio-simbolico-kbs)
-  - [7.4.5 Limiti e possibili estensioni del modulo ML](#745-limiti-e-possibili-estensioni-del-modulo-ml)
-  - [7.4.6 Considerazioni finali sul modulo ML](#746-considerazioni-finali-sul-modulo-ml)
+    - [7.4.4 Analisi critica: ML vs approccio simbolico (KBS)](#744-analisi-critica-ml-vs-approccio-simbolico-kbs)
+    - [7.4.5 Limiti e possibili estensioni del modulo ML](#745-limiti-e-possibili-estensioni-del-modulo-ml)
+    - [7.4.6 Considerazioni finali sul modulo ML](#746-considerazioni-finali-sul-modulo-ml)
 
 - [8. Conclusioni](#8-conclusioni)
   - [8.1 Sviluppi Futuri](#81-sviluppi-futuri)
