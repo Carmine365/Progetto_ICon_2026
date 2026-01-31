@@ -54,22 +54,21 @@
   - [2.7 Vantaggi dell’architettura adottata](#27-vantaggi-dellarchitettura-adottata)
 
 - [3. Knowledge-Based System (KBS) e Knowledge Base](#3-knowledge-based-system-kbs-e-knowledge-base)
-  - [3.1 Ruolo del KBS nel sistema](#31-ruolo-del-kbs-nel-sistema)
-  - [3.2 Scelte di implementazione e motivazioni](#32-scelte-di-implementazione-e-motivazioni)
+  - [3.1 Sommario](#31-sommario)
+  - [3.2 Strumenti Utilizzati](#32-strumenti-utilizzati)
     - [3.2.1 Motore a regole: experta](#321-motore-a-regole-experta)
     - [3.2.2 Compatibilità Python (fix per experta)](#322-compatibilità-python-fix-per-experta)
   - [3.3 Acquisizione della conoscenza e popolamento della Knowledge Base](#33-acquisizione-della-conoscenza-e-popolamento-della-knowledge-base)
     - [3.3.1 Inizializzazione della KB](#331-inizializzazione-della-kb)
     - [3.3.2 Acquisizione delle osservazioni qualitative](#332-acquisizione-delle-osservazioni-qualitative)
     - [3.3.3 Acquisizione dei parametri numerici](#333-acquisizione-dei-parametri-numerici)
-  - [3.4 Regole di inferenza e catene decisionali](#34-regole-di-inferenza-e-catene-decisionali)
+  - [3.4 Decisioni di Progetto (Regole e Logica)](#34-decisioni-di-progetto-regole-e-logica)
     - [3.4.1 Regole di controllo del flusso](#341-regole-di-controllo-del-flusso)
     - [3.4.2 Regola relazionale: Rischio Corrosione](#342-regola-relazionale-rischio-corrosione)
   - [3.5 Integrazione tra KBS e CSP (Diagnosi → Azione)](#35-integrazione-tra-kbs-e-csp-diagnosi--azione)
     - [3.5.1 Regole di attivazione dello scheduler](#351-regole-di-attivazione-dello-scheduler)
   - [3.6 Output finale del sistema esperto](#36-output-finale-del-sistema-esperto)
-  - [3.7 Complessità, robustezza ed estendibilità](#37-complessità-robustezza-ed-estendibilità)
-  - [3.8 Limiti del KBS e possibili miglioramenti](#38-limiti-del-kbs-e-possibili-miglioramenti)
+  - [3.7 Valutazione del KBS](#37-valutazione-del-kbs)
   - [3.9 Interfaccia Grafica del sistema esperto (UI)](#39-interfaccia-grafica-del-sistema-esperto-ui))
     - [3.9.1 Caso normale con acqua potabile](#391-caso-normale-con-acqua-potabile)
     - [3.9.2 Caso di anomalia chimica](#392-caso-di-anomalia-chimica)
@@ -96,27 +95,15 @@
   - [4.8 Considerazioni finali sullo strato ontologico](#48-considerazioni-finali-sullo-strato-ontologico)
 
 - [5. Constraint Satisfaction Problem (CSP) e Scheduler](#5-constraint-satisfaction-problem-csp-e-scheduler)
-  - [5.1 Ruolo del CSP nel sistema complessivo](#51-ruolo-del-csp-nel-sistema-complessivo)
-  - [5.2 Definizione Formale del Problema <X, D, C>](#52-definizione-formale-del-problema-x-d-c)
-    - [5.2.1 Variabili (X)](#521-variabili-x)
-    - [5.2.2 Domini (D)](#522-domini-d)
-    - [5.2.3 Vincoli (C)](#523-vincoli-c)
-  - [5.3 File e integrazione con il KBS](#53-file-e-integrazione-con-il-kbs)
-    - [5.3.1 File di riferimento](#531-file-di-riferimento)
-  - [5.4 Modellazione del CSP](#54-modellazione-del-csp)
-    - [5.4.1 Variabili del CSP](#541-variabili-del-csp)
-    - [5.4.2 Domini delle variabili](#542-domini-delle-variabili)
-    - [5.4.3 Vincoli del CSP](#543-vincoli-del-csp)
-  - [5.5 Risoluzione del CSP](#55-risoluzione-del-csp)
-  - [5.6 Integrazione diagnosi → pianificazione](#56-integrazione-diagnosi--pianificazione)
-    - [5.6.1 Flusso completo](#561-flusso-completo)
-  - [5.7 Scelte progettuali e alternative scartate](#57-scelte-progettuali-e-alternative-scartate)
-    - [5.7.1 Perché un CSP e non codice procedurale](#571-perché-un-csp-e-non-codice-procedurale)
-    - [5.7.2 Perché un CSP semplice](#572-perché-un-csp-semplice)
-  - [5.8 Complessità computazionale e Spazio degli Stati](#58-complessità-computazionale-e-spazio-degli-stati)
-  - [5.9 Libreria utilizzata](#59-libreria-utilizzata)
-  - [5.10 Estensioni possibili](#510-estensioni-possibili)
-  - [5.11 Considerazioni finali sul modulo CSP](#511-considerazioni-finali-sul-modulo-csp)
+  - [5.1 Sommario](#51-sommario)
+  - [5.2 Strumenti utilizzati](#52-strumenti-utilizzati)
+  - [5.3 Decisioni di Progetto (Variabili e Vincoli](#53-decisioni-di-progetto-variabili-e-vincoli)
+  - [5.4 Valutazione](#54-valutazione)
+    - [5.4.1 Integrazione diagnosi → pianificazione](#541-integrazione-diagnosi--pianificazione)
+    - [5.4.2 Scelte progettuali e alternative scartate](#542-scelte-progettuali-e-alternative-scartate)
+    - [5.4.3 Complessità computazionale e Spazio degli Stati](#543-complessità-computazionale-e-spazio-degli-stati)
+    - [5.4.4 Estensioni possibili](#544-estensioni-possibili)
+  - [5.4.5 Considerazioni finali sul modulo CSP](#545-considerazioni-finali-sul-modulo-csp)
 
 - [6. Modulo di Ragionamento Probabilistico](#6-modulo-di-ragionamento-probabilistico)
   - [6.1 Scelta Progettuale e Ruolo](#61-scelta-progettuale-e-ruolo)
@@ -125,35 +112,25 @@
   - [6.4 Integrazione nell'Interfaccia](#64-integrazione-nell'-interfaccia)
 
 - [7. Apprendimento Automatico (ML): modelli, parametri e valutazione](#7-apprendimento-automatico-ml-modelli-parametri-e-valutazione)
-  - [7.1 Ruolo del modulo ML nel progetto](#71-ruolo-del-modulo-ml-nel-progetto)
-  - [7.2 Dataset utilizzato](#72-dataset-utilizzato)
+  - [7.1 Sommario](#71-sommario)
+  - [7.2 Strumenti utilizzati](#72-strumenti-utilizzati)
     - [7.2.1 Descrizione del dataset](#721-descrizione-del-dataset)
     - [7.2.2 Preprocessing dei dati](#722-preprocessing-dei-dati)
-  - [7.3 Modelli implementati](#73-modelli-implementati)
-    - [7.3.1 Logistic Regression](#731-logistic-regression)
-    - [7.3.2 Decision Tree](#732-decision-tree)
-    - [7.3.3 K-Nearest Neighbors (KNN)](#733-k-nearest-neighbors-knn)
-    - [7.3.4 Multi-Layer Perceptron (MLP)](#734-multi-layer-perceptron-mlp)
-    - [7.3.5 Gaussian Naive Bayes](#735-gaussian-naive-bayes)
-  - [7.4 Scelte sugli iperparametri](#74-scelte-sugli-iperparametri)
-  - [7.5 Protocollo di valutazione (punto cruciale)](#75-protocollo-di-valutazione-punto-cruciale)
-    - [7.5.1 Motivazione del protocollo](#751-motivazione-del-protocollo)
-    - [7.5.2 Cross-Validation](#752-cross-validation)
-    - [7.5.3 Metriche utilizzate](#753-metriche-utilizzate)
-  - [7.6 Valutazione sperimentale rigorosa](#76-valutazione-sperimentale-rigorosa)
-    - [7.6.1 Risultati della Cross-Validation (mean ± std)](#761-risultati-della-cross-validation-mean--std)
-    - [7.6.2 Nota su valutazioni “single split”](#762-nota-su-valutazioni-single-split)
-    - [7.6.3 Analisi critica dello sbilanciamento e performance dell'MLP](#763-analisi-critica-dello-sbilanciamento-e-performance-dell'-MLP)
-  - [7.7 Analisi critica: ML vs approccio simbolico (KBS)](#77-analisi-critica-ml-vs-approccio-simbolico-kbs)
-  - [7.8 Confronto concettuale KBS vs ML](#78-confronto-concettuale-kbs-vs-ml)
-  - [7.9 Limiti e possibili estensioni del modulo ML](#79-limiti-e-possibili-estensioni-del-modulo-ml)
-    - [7.9.1 Limiti](#791-limiti)
-    - [7.9.2 Estensioni possibili](#792-estensioni-possibili)
-  - [7.10 Considerazioni finali sul modulo ML](710-considerazioni-finali-sul-modulo-ml)
+  - [7.2.3 Modelli implementati](#723-modelli-implementati)
+  - [7.3 Decisioni di Progetto (Iperparametri)](#73-decisioni-di-progetto-iperparametri)
+    - [7.3.1 Protocollo di valutazione (punto cruciale)](#731-protocollo-di-valutazione-punto-cruciale)
+    - [7.3.2 Cross-Validation](#732-cross-validation)
+    - [7.3.3 Metriche utilizzate](#733-metriche-utilizzate)
+  - [7.4 Valutazione](#74-valutazione)
+    - [7.4.1 Risultati della Cross-Validation (mean ± std)](#741-risultati-della-cross-validation-mean--std)
+    - [7.4.2 Nota su valutazioni “single split”](#742-nota-su-valutazioni-single-split)
+    - [7.4.3 Analisi critica dello sbilanciamento e performance dell'MLP](#743-analisi-critica-dello-sbilanciamento-e-performance-dell'-MLP)
+  - [7.4.4 Analisi critica: ML vs approccio simbolico (KBS)](#744-analisi-critica-ml-vs-approccio-simbolico-kbs)
+  - [7.4.5 Limiti e possibili estensioni del modulo ML](#745-limiti-e-possibili-estensioni-del-modulo-ml)
+  - [7.4.6 Considerazioni finali sul modulo ML](#746-considerazioni-finali-sul-modulo-ml)
 
 - [8. Conclusioni](#8-conclusioni)
   - [8.1 Sviluppi Futuri](#81-sviluppi-futuri)
-
 - [9. Riferimenti Bibliografici](#9-riferimenti-bibliografici)
 
 ---
@@ -607,7 +584,7 @@ Moduli collegati:
 
 ---
 
-## 3.1 Ruolo del KBS nel sistema
+## 3.1 Sommario
 
 Il KBS è il componente che realizza la parte **simbolica e spiegabile** del sistema. In particolare:
 
@@ -638,7 +615,7 @@ e viene presentato il menu interattivo per l’analisi dei campioni.*
 
 ---
 
-## 3.2 Scelte di implementazione e motivazioni
+## 3.2 Strumenti Utilizzati
 
 ### 3.2.1 Motore a regole: `experta`
 Nel file `src/expert_system.py` il ragionamento è implementato tramite:
@@ -733,7 +710,7 @@ Il sistema confronta i valori con soglie definite come costanti (WHO / soglie op
 
 ---
 
-## 3.4 Regole di inferenza e catene decisionali
+## 3.4 Decisioni di Progetto (Regole e Logica)
 
 ### 3.4.1 Regole di controllo del flusso
 
@@ -799,18 +776,14 @@ conclude per la potabilità del campione, senza attivare interventi operativi.*
 
 ---
 
-## 3.7 Complessità, robustezza ed estendibilità
+## 3.7 Valutazione del KBS
 
 * **Complessità**: La crescita dei fatti () e delle regole () è lineare. L'uso di predicati `lambda` per i vincoli numerici ottimizza il matching senza appesantire il motore Rete.
 * **Robustezza**: Il sistema gestisce gli input tramite blocchi `try/except` e validazione dei range (es. pH tra 0 e 14), prevenendo stati inconsistenti della KB.
 * **Estendibilità**: L'architettura `param/value` permette di aggiungere nuovi sensori o parametri chimici semplicemente aggiungendo una regola, senza modificare la struttura dati portante.
 
----
-
-## 3.8 Limiti del KBS e possibili miglioramenti
-
-1. **Copertura limitata di regole relazionali**: il sistema include regole che combinano più parametri, ma il numero di combinazioni critiche gestite è volutamente contenuto. Un miglioramento naturale sarebbe introdurre ulteriori regole multi-parametro (es. combinazioni che includano anche torbidità/solidi) mantenendo però la KB leggibile e manutenibile.
-3. **Sistema di scoring**: attualmente ogni anomalia contribuisce in modo simile al verdetto finale. Un miglioramento significativo sarebbe introdurre un sistema a punteggio pesato (o logica fuzzy) per rappresentare meglio la gravità relativa dei diversi problemi.
+* **Copertura limitata di regole relazionali**: il sistema include regole che combinano più parametri, ma il numero di combinazioni critiche gestite è volutamente contenuto. Un miglioramento naturale sarebbe introdurre ulteriori regole multi-parametro (es. combinazioni che includano anche torbidità/solidi) mantenendo però la KB leggibile e manutenibile.
+* **Sistema di scoring**: attualmente ogni anomalia contribuisce in modo simile al verdetto finale. Un miglioramento significativo sarebbe introdurre un sistema a punteggio pesato (o logica fuzzy) per rappresentare meglio la gravità relativa dei diversi problemi.
 
 ---
 
@@ -1144,7 +1117,7 @@ L’obiettivo di questo modulo è dimostrare la capacità di:
 
 ---
 
-## 5.1 Ruolo del CSP nel sistema complessivo
+## 5.1 Sommario
 
 Il CSP rappresenta lo **strato operativo** del sistema.  
 Mentre il KBS risponde alla domanda:
@@ -1162,21 +1135,19 @@ Questa distinzione è fondamentale per:
 
 ---
 
-## 5.2 Definizione Formale del Problema <X, D, C>
+## 5.2 Strumenti utilizzati
+
+L'implementazione si basa su `python-constraint`, un motore di risoluzione efficiente che utilizza algoritmi di **Backtracking** standard. La scelta di questa libreria permette di definire i vincoli in modo dichiarativo (funzioni Python che restituiscono `True`/`False`), separando nettamente la definizione del problema dalla sua risoluzione algoritmica.
 
 Il CSP è definito dalla tripla $\langle X, D, C \rangle$, dove:
 - $X$: Insieme delle variabili.
 - $D$: Insieme dei domini delle variabili.
 - $C$: Insieme dei vincoli che limitano le combinazioni accettabili.
 
-### 5.2.1 Variabili (X)
-
 Nel file `src/scheduler.py` sono state definite tre variabili decisionali per ogni singola assegnazione:
 1. $X_{staff}$: Il membro del personale assegnato all'intervento.
 2. $X_{giorno}$: Il giorno della settimana previsto.
 3. $X_{turno}$: La fascia oraria lavorativa.
-
-### 5.2.2 Domini ($D$)
 
 I domini rappresentano i valori possibili assumibili dalle variabili.
 
@@ -1191,8 +1162,6 @@ I domini rappresentano i valori possibili assumibili dalle variabili.
   - Se issue_type == "critical" (Allarme Rischio):
   $$D_{staff} = \{ \text{"SQUADRA EMERGENZA", "Resp. Sicurezza"} \}$$
 
-### 5.2.3 Vincoli ($C$)
-
 I vincoli implementati (metodo `apply_constraints`) riflettono regole operative e di disponibilità.
 
 1. **Vincolo Unario/Binario su Disponibilità (Dr. Rossi)**:
@@ -1206,9 +1175,10 @@ I vincoli implementati (metodo `apply_constraints`) riflettono regole operative 
   - Implementazione: Funzione `vincolo_verdi_solo_mattina`.
 3. **Vincoli Impliciti (Hard Constraints)**: La struttura stessa dei domini impone vincoli rigidi: un "Tecnico Idraulico" non apparirà mai nel dominio di un problema chimico, impedendo *by design* assegnazioni incoerenti.
 
+
 ---
 
-## 5.3 File e integrazione con il KBS
+## 5.3 Decisioni di Progetto (Variabili e Vincoli)
 
 L'interazione tra i due sistemi avviene nel metodo `_run_scheduler(issue_type)` in `src/expert_system.py`.
 
@@ -1219,7 +1189,7 @@ L'interazione tra i due sistemi avviene nel metodo `_run_scheduler(issue_type)` 
 5. **Risoluzione**: Il solver (libreria `python-constraint`) esplora lo spazio degli stati ridotto e applica i vincoli su Rossi e Verdi.
 6. **Output**: Restituisce la prima soluzione valida (o tutte le soluzioni) al KBS, che la propone all'utente.
 
-### 5.3.1 File di riferimento
+Come file di riferimento sono stati utilizzati:
 - **Modulo CSP**: `src/scheduler.py`
 - **Invocazione**: `src/expert_system.py` tramite il metodo `_run_scheduler(issue_type)`
 
@@ -1233,10 +1203,6 @@ Questa scelta:
 - rende il CSP indipendente dai dettagli della KB;
 - consente di modificare i vincoli operativi senza toccare le regole diagnostiche.
 
----
-
-## 5.4 Modellazione del CSP
-
 Il problema di scheduling è modellato come un CSP classico nel modulo `src/scheduler.py`, definendo:
 
 - **Variabili**: `staff`, `giorno`, `turno`
@@ -1245,9 +1211,6 @@ Il problema di scheduling è modellato come un CSP classico nel modulo `src/sche
 
 L’obiettivo non è la complessità industriale del problema, ma la **corretta formalizzazione** e l’integrazione nel flusso *diagnosi → pianificazione* (KBS → CSP), mantenendo il modello estendibile (aggiunta di nuove risorse o vincoli senza modificare le regole diagnostiche).
 
----
-### 5.4.1 Variabili del CSP
-
 Nel modulo `src/scheduler.py`, le variabili rappresentano una singola assegnazione operativa dell’intervento:
 
 - **`staff`**: membro del personale assegnato;
@@ -1255,10 +1218,6 @@ Nel modulo `src/scheduler.py`, le variabili rappresentano una singola assegnazio
 - **`turno`**: fascia oraria.
 
 La soluzione del CSP è quindi una terna del tipo `(staff, giorno, turno)` coerente con la tipologia di problema diagnosticata.
-
----
-
-### 5.4.2 Domini delle variabili
 
 I domini sono insiemi finiti di valori possibili:
 
@@ -1270,10 +1229,6 @@ I domini sono insiemi finiti di valori possibili:
 
 Questa riduzione del dominio `staff` è una forma di propagazione dei vincoli “a monte” che riduce lo spazio degli stati e rende la risoluzione immediata.
 
----
-
-### 5.4.3 Vincoli del CSP
-
 I vincoli modellano restrizioni operative e di disponibilità. Nel progetto sono implementati vincoli del tipo:
 
 - **vincoli di disponibilità su giorno/turno** (es. una risorsa non è disponibile in un determinato giorno);
@@ -1282,10 +1237,9 @@ I vincoli modellano restrizioni operative e di disponibilità. Nel progetto sono
 
 Anche se il problema è volutamente semplice, la modellazione è dichiarativa ed estendibile: nuove risorse o vincoli possono essere aggiunti senza modificare le regole diagnostiche del KBS.
 
-
 ---
 
-## 5.5 Risoluzione del CSP
+## 5.4 Valutazione
 
 Il modulo `scheduler.py`:
 
@@ -1300,11 +1254,7 @@ La soluzione consiste in:
 
 Non viene forzata una strategia di ottimizzazione complessa (es. minimizzazione costi), poiché l’obiettivo principale è la **soddisfazione dei vincoli**, non l’ottimo globale.
 
----
-
-## 5.6 Integrazione diagnosi → pianificazione
-
-### 5.6.1 Flusso completo
+## 5.4.1 Integrazione diagnosi → pianificazione
 
 Il flusso integrato KBS–CSP è il seguente:
 
@@ -1319,9 +1269,7 @@ Questo flusso dimostra una **catena causale completa**:
 
 ---
 
-## 5.7 Scelte progettuali e alternative scartate
-
-### 5.7.1 Perché un CSP e non codice procedurale
+## 5.4.2 Scelte progettuali e alternative scartate
 
 Una soluzione procedurale (if/else) sarebbe stata:
 
@@ -1329,15 +1277,11 @@ Una soluzione procedurale (if/else) sarebbe stata:
 * meno espressiva;
 * poco estendibile.
 
-Il CSP consente invece di:
+Il CSP consente invece di: 
 
 * dichiarare vincoli separatamente dalla logica di controllo;
 * estendere facilmente il problema (nuove risorse, nuovi vincoli);
 * dimostrare l’uso di un paradigma di ICon distinto dal KBS.
-
----
-
-### 5.7.2 Perché un CSP semplice
 
 Il problema è volutamente contenuto perché:
 
@@ -1347,7 +1291,7 @@ Il problema è volutamente contenuto perché:
 
 ---
 
-## 5.8 Complessità computazionale e Spazio degli Stati
+## 5.4.3 Complessità computazionale e Spazio degli Stati
 
 * Numero di variabili: basso (1–poche variabili).
 * Dimensione dei domini: limitata e dipendente dal tipo di problema.
@@ -1366,13 +1310,7 @@ Questa riduzione rende la risoluzione istantanea, garantendo che il sistema rima
 
 ---
 
-## 5.9 Libreria utilizzata
-
-L'implementazione si basa su `python-constraint`, un motore di risoluzione efficiente che utilizza algoritmi di **Backtracking** standard. La scelta di questa libreria permette di definire i vincoli in modo dichiarativo (funzioni Python che restituiscono `True`/`False`), separando nettamente la definizione del problema dalla sua risoluzione algoritmica.
-
----
-
-### 5.10 Estensioni possibili
+### 5.4.4 Estensioni possibili
 
 Il modulo CSP può essere esteso per:
 
@@ -1385,7 +1323,7 @@ Queste estensioni sarebbero naturali in un’evoluzione del progetto verso un la
 
 ---
 
-## 5.11 Considerazioni finali sul modulo CSP
+## 5.4.5 Considerazioni finali sul modulo CSP
 
 Il modulo CSP:
 
@@ -1395,7 +1333,6 @@ Il modulo CSP:
 * rispetta le linee guida del corso evitando soluzioni hard-coded.
 
 Pur nella sua semplicità, rappresenta un elemento chiave per trasformare il sistema da puramente diagnostico a **decisionale e operativo**.
-
 
 ---
 
@@ -1447,7 +1384,7 @@ La componente ML è progettata come **modulo indipendente**, utilizzato per:
 
 ---
 
-## 7.1 Ruolo del modulo ML nel progetto
+## 7.1 Sommario
 
 Il modulo ML non sostituisce il KBS, ma lo **completa**.  
 Il suo ruolo è quello di:
@@ -1510,47 +1447,39 @@ Questo approccio garantisce che il calcolo dei valori sostitutivi (es. la media)
 
 ---
 
-## 7.3 Modelli implementati
+## 7.2.3 Modelli implementati
 
 I modelli sono definiti e gestiti in `src/ml_models.py`.  
-Il progetto implementa **più classificatori**, scelti per rappresentare approcci diversi.
+Il progetto implementa **più classificatori**, scelti per rappresentare approcci diversi:
 
-### 7.3.1 Logistic Regression
-- Modello lineare, interpretabile.
-- Parametro rilevante:
-  - `max_iter = 1000` (scelto per garantire convergenza).
+ **Modello lineare, interpretabile**
+ 
+ Parametro principale: `max_iter = 1000` (scelto per garantire convergenza).
 
-Motivazione:
-- baseline semplice;
-- utile per confrontare modelli più complessi.
+  Motivazione:
+  - baseline semplice;
+  - utile per confrontare modelli più complessi.
 
----
 
-### 7.3.2 Decision Tree
-- Modello non lineare basato su regole indotte dai dati.
+**Modello non lineare basato su regole indotte dai dati**
 
-Motivazione:
-- capacità di modellare interazioni non lineari;
-- parziale interpretabilità della struttura ad albero.
+  Motivazione:
+  - capacità di modellare interazioni non lineari;
+  - parziale interpretabilità della struttura ad albero.
 
----
 
-### 7.3.3 K-Nearest Neighbors (KNN)
-- Modello instance-based.
+**Modello instance-based**
 
-Parametro principale:
-- numero di vicini `k` (valore impostato nel codice).
+ Parametro principale: numero di vicini `k` (valore impostato nel codice).
 
-Motivazione:
-- approccio basato su similarità;
-- sensibilità alla distribuzione dei dati.
+  Motivazione:
+  - approccio basato su similarità;
+  - sensibilità alla distribuzione dei dati.
 
----
 
-### 7.3.4 Multi-Layer Perceptron (MLP)
-- Rete neurale feed-forward.
+**Rete neurale feed-forward**
 
-Parametri rilevanti:
+Parametri principali:
 - architettura della rete (numero di neuroni/layer);
 - numero massimo di iterazioni.
 
@@ -1558,10 +1487,8 @@ Motivazione:
 - capacità di apprendere pattern complessi;
 - confronto con modelli più semplici.
 
----
 
-### 7.3.5 Gaussian Naive Bayes
-- Modello probabilistico con ipotesi di indipendenza condizionata.
+**Modello probabilistico con ipotesi di indipendenza condizionata**
 
 Motivazione:
 - semplicità;
@@ -1569,7 +1496,7 @@ Motivazione:
 
 ---
 
-## 7.4 Scelte sugli iperparametri
+## 7.3 Decisioni di Progetto (Iperparametri)
 
 Gli iperparametri sono scelti secondo criteri **pratici e conservativi**:
 
@@ -1583,9 +1510,7 @@ Questa scelta è coerente con l’obiettivo del progetto:
 
 ---
 
-## 7.5 Protocollo di valutazione (punto cruciale)
-
-### 7.5.1 Motivazione del protocollo
+## 7.3.1 Protocollo di valutazione (punto cruciale)
 
 Per evitare valutazioni fuorvianti basate su:
 - un singolo split train/test;
@@ -1597,7 +1522,7 @@ Questa scelta è in linea con le linee guida dell’insegnamento.
 
 ---
 
-### 7.5.2 Cross-Validation
+### 7.3.2 Cross-Validation
 
 Nel modulo `src/ml_models.py` la valutazione è effettuata con **10-fold cross-validation**.
 Per ciascun fold viene calcolata la metrica scelta e, come risultato finale, vengono riportati:
@@ -1611,7 +1536,7 @@ Questo consente di stimare:
 
 ---
 
-### 7.5.3 Metriche utilizzate
+### 7.3.3 Metriche utilizzate
 
 La metrica utilizzata per il confronto tra modelli è:
 
@@ -1625,7 +1550,7 @@ La scelta è motivata da:
 Metriche aggiuntive non vengono introdotte in questa valutazione comparativa per evitare ridondanza e mantenere la documentazione focalizzata sulle scelte realmente impiegate nel progetto.
 
 ---
-## 7.6 Valutazione sperimentale rigorosa
+## 7.4 Valutazione
 
 Per garantire la robustezza dei risultati ed evitare bias dovuti a una singola partizione dei dati, è stato adottato un protocollo di validazione basato su **10-fold cross-validation**.  
 L’obiettivo è ottenere una stima più affidabile delle prestazioni medie e della loro stabilità, riportando **media ± deviazione standard**. Per l’analisi qualitativa dettagliata 
@@ -1645,7 +1570,7 @@ mostra una migliore capacità di separazione tra le classi, come evidenziato
 dall’andamento della curva ROC, meno influenzata dallo sbilanciamento del dataset.*
 
 
-### 7.6.1 Risultati della Cross-Validation (mean ± std)
+### 7.4.1 Risultati della Cross-Validation (mean ± std)
 
 I valori riportati rappresentano la **media ± deviazione standard** dell’Accuracy sui 10 fold.  
 La deviazione standard ($\sigma$) è importante per valutare la stabilità del modello: un $\sigma$ basso indica prestazioni più consistenti al variare del fold.
@@ -1660,7 +1585,7 @@ La deviazione standard ($\sigma$) è importante per valutare la stabilità del m
 
 *(I valori numerici sono ottenuti eseguendo gli script in `main_ml.py`. Eventuali piccole variazioni tra run possono dipendere da componenti con casualità, se non viene fissato un `random_state`.)*
 
-### 7.6.2 Nota su valutazioni “single split” 
+### 7.4.2 Nota su valutazioni “single split” 
 
 Nel progetto possono essere presenti anche valutazioni su un singolo split train/test (ad es. matrice di confusione o classification report), ma queste sono da considerarsi **solo illustrative**.  
 Per il confronto tra modelli in questa documentazione si usano esclusivamente risultati **mediati in cross-validation** (mean ± std), in linea con le linee guida dell’insegnamento.
@@ -1676,7 +1601,7 @@ Per il confronto tra modelli in questa documentazione si usano esclusivamente ri
 caricamento del dataset, valutazione tramite cross-validation (10-fold) e
 generazione dei grafici di valutazione sul test set.*
 
-### 7.6.3 Analisi critica dello sbilanciamento e performance dell'MLP
+### 7.4.3 Analisi critica dello sbilanciamento e performance dell'MLP
 
 Il dataset presenta un moderato sbilanciamento tra le classi (circa 60% Non Potabile vs 40% Potabile). 
 Per la valutazione comparativa, si è scelto di mantenere la distribuzione naturale dei dati (senza forzare il bilanciamento su tutti i modelli), privilegiando l'**Accuracy** come metrica di riferimento globale. Tuttavia, per evitare l'Accuracy Paradox, i risultati sono stati validati osservando le Matrici di Confusione e le curve ROC.
@@ -1693,7 +1618,7 @@ In conclusione, per questo specifico dominio, l'approccio simbolico (Decision Tr
 
 ---
 
-## 7.7 Analisi critica: ML vs approccio simbolico (KBS)
+## 7.4.4 Analisi critica: ML vs approccio simbolico (KBS)
 
 I risultati della cross-validation mostrano che i modelli ML ottengono un’accuracy media intorno a ~0.60, con variabilità diversa a seconda dell’algoritmo (deviazione standard più o meno alta).
 
@@ -1717,9 +1642,7 @@ Questo risultato è utile per contestualizzare il ruolo del ML nel progetto:
 Nel progetto il ML è usato come **termine di confronto** e supporto statistico, mentre la decisione operativa è guidata principalmente dal **ragionamento rule-based** del KBS. L’ontologia resta un supporto semantico **opzionale** (reasoner) e descrittivo, non il driver della decisione.
 
 
----
-
-## 7.8 Confronto concettuale KBS vs ML
+## Confronto concettuale KBS vs ML
 
 | Aspetto            | KBS                          | ML                           |
 |--------------------|------------------------------|------------------------------|
@@ -1732,23 +1655,21 @@ Questo confronto giustifica la scelta di un sistema **ibrido**, anziché affidar
 
 ---
 
-## 7.9 Limiti e possibili estensioni del modulo ML
+## 7.4.5 Limiti e possibili estensioni del modulo ML
 
-### 7.9.1 Limiti
+#### Limiti
 - uso di un dataset standard;
 - assenza di tuning sistematico degli iperparametri;
 - metriche limitate all’accuracy.
 
----
-
-### 7.9.2 Estensioni possibili
+#### Estensioni possibili
 - tuning automatico (Grid Search);
 - introduzione di metriche aggiuntive (precision/recall);
 - integrazione più stretta con il KBS (es. suggerimento soglie).
 
 ---
 
-## 7.10 Considerazioni finali sul modulo ML
+## 7.4.6 Considerazioni finali sul modulo ML
 
 La componente ML:
 - è correttamente isolata e valutata;
